@@ -154,3 +154,7 @@ for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_por
 		use_normalized_coordinates=True,
 		line_thickness=8,
 		min_score_thresh=SCORE_TRESHOLD)
+
+	# End the program if q is pressed
+	if key == ord("q"):
+		break
