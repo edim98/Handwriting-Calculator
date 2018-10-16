@@ -9,7 +9,7 @@ import sys
 from utils import label_map_util as lmu
 from utils import visualization_utils as vu
 from picamera.array import PiRGBArray
-from picamera import PiCamera as PiCamera
+from picamera import PiCamera
 
 #--------------- Only change variables below this line! -----------------
 #vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -24,7 +24,7 @@ LABELMAP_FOLDERNAME = 'training'
 LABELMAP_FILENAME = 'labelmap.pbtxt'
 
 # The number of classes the model can detect
-NUMBER_OF_CLASSES = '14'
+NUMBER_OF_CLASSES = 14
 
 # The certainty treshold for a classified object to show (0.0-1.0)
 SCORE_TRESHOLD = 0.5
@@ -45,19 +45,21 @@ LABELMAP_DIR = os.path.join(CURRENT_DIR, LABELMAP_FOLDERNAME, LABELMAP_FILENAME)
 
 # Load the labelmap to convert ID numbers the model uses into usable category names
 labelmap = lmu.load_labelmap(LABELMAP_DIR)
-categories = lmu.convert_label_map_to_categories(labelmap, max_num_classes = NUMBER_OF_CLASSES, use_display_name = True)
+categories = lmu.convert_label_map_to_categories(labelmap, max_num_classes=NUMBER_OF_CLASSES, use_display_name=True)
 cat_index = lmu.create_category_index(categories)
 
 print("Loaded directories, starting to load Tensorflow Model")
 
 # Load the Tensorflow model
 detection_graph = tf.Graph()
-with detection_graph.as_defaul():
+with detection_graph.as_default():
 	od_graph_def = tf.GraphDef()
 	with tf.gfile.GFile(FIG_DIR, 'rb') as fid:
 		serialized_graph = fid.read()
 		od_graph_def.ParseFromString(serialized_graph)
 		tf.import_graph_def(od_graph_def, name = '')
+
+	sess = tf.Session(graph=detection_graph)
 
 print("Tensorflow model loaded, initializing model")
 
@@ -77,22 +79,31 @@ num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
 # Initialise PiCamera
 camera = PiCamera()
-camera.resolution(640, 360)
+camera.resolution = (640, 368)
 camera.framerate = 24
-rawCapture = PiRGBArray(camera, size = (640, 360))
+rawCapture = PiRGBArray(camera, size = (640, 368))
+
+time.sleep(0.1)
 
 # Get the camera input and start the model on it
-for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = True)
+for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = True):
+	print("frame")
+
 	# Get the input image for the model
 	input_image = frame.array
 	expanded_input_image = np.expand_dims(input_image, axis = 0)
+
+	# cv2.imshow("Frame", input_image)
+
+	rawCapture.truncate(0)
+
 
 	print("Starting model")
 
 	# Let the model actually run on the input image, and gain the output values
 	(boxes, scores, classes, num) = sess.run(
 		[detection_boxes, detection_scores, detection_classes, num_detections],
-		feed_dict = {image_tensor: image_expanded})
+		feed_dict = {image_tensor: expanded_input_image})
 
 	# Get the formula recognised on the input image and make it a string
 	# Check for scores higher than the treshold and count it
@@ -138,23 +149,21 @@ for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_por
 			formula += '/'
 
 	# To be replaced and calculated by FPGA
-	answer = int(eval(formula))
+	# answer = int(eval(formula))
 
 	# print("The formula in the image is: %s" % (formula))
 	# print("The answer to that formula is: %d" % (answer))
-	print("%s = %d" % (formula, answer))
+	# print("%s = %d" % (formula, answer))
 
 	# Make the labels on the image
-	vis_util.visualize_boxes_and_labels_on_image_array(
-		image,
+	vu.visualize_boxes_and_labels_on_image_array(
+		input_image,
 		np.squeeze(boxes),
 		np.squeeze(classes).astype(np.int32),
 		np.squeeze(scores),
-		category_index,
+		cat_index,
 		use_normalized_coordinates=True,
 		line_thickness=8,
 		min_score_thresh=SCORE_TRESHOLD)
 
-	# End the program if q is pressed
-	if key == ord("q"):
-		break
+	# cv2.imshow('Object detector', input_image)
