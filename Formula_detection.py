@@ -1,4 +1,5 @@
 import datetime
+import time
 import os
 import cv2
 import numpy as np
@@ -7,6 +8,8 @@ import sys
 
 from utils import label_map_util as lmu
 from utils import visualization_utils as vu
+from picamera.array import PiRGBArray
+from picamera import PiCamera as PiCamera
 
 #--------------- Only change variables below this line! -----------------
 #vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -72,74 +75,82 @@ detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
 # The amount of objects detected in the image given as input
 num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
-# Get the input image for the model
-input_image = 
-expanded_input_image = np.expand_dims(input_image, axis = 0)
+# Initialise PiCamera
+camera = PiCamera()
+camera.resolution(640, 360)
+camera.framerate = 24
+rawCapture = PiRGBArray(camera, size = (640, 360))
 
-print("Starting model")
+# Get the camera input and start the model on it
+for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = True)
+	# Get the input image for the model
+	input_image = frame.array
+	expanded_input_image = np.expand_dims(input_image, axis = 0)
 
-# Let the model actually run on the input image, and gain the output values
-(boxes, scores, classes, num) = sess.run(
-	[detection_boxes, detection_scores, detection_classes, num_detections],
-	feed_dict = {image_tensor: image_expanded})
+	print("Starting model")
 
-# Get the formula recognised on the input image and make it a string
-temp_list = []
+	# Let the model actually run on the input image, and gain the output values
+	(boxes, scores, classes, num) = sess.run(
+		[detection_boxes, detection_scores, detection_classes, num_detections],
+		feed_dict = {image_tensor: image_expanded})
 
-# print(boxes)
-# print(scores)
-# print(classes)
+	# Get the formula recognised on the input image and make it a string
+	# Check for scores higher than the treshold and count it
+	items_with_good_percentage = 0
+	for item in scores[0]:
+		if item >= SCORE_TRESHOLD:
+			items_with_good_percentage+=1
+		else:
+			break
 
-# Check for scores higher than the treshold
-items_with_good_percentage = 0
-for item in scores[0]:
-	if item >= SCORE_TRESHOLD:
-		items_with_good_percentage+=1
-	else:
-		break
+	# Put the left x location of the box and the detected class as tuples in the temp_list
+	temp_list = []
+	for i in range(0, items_with_good_percentage):
+		temp_list.append((boxes[0][i][1], classes[0][i]))
 
-for i in range(0, items_with_good_percentage):
-	temp_list.append((boxes[0][i][1], classes[0][i]))
+	# print(temp_list)
 
-# print(temp_list)
+	def sortBy(item):
+		return item[0]
 
-def sortBy(item):
-	return item[0]
+	# Sort the temporary list
+	sorted_list = sorted(temp_list, key=sortBy)
+	formula_array = []
 
-sorted_list = sorted(temp_list, key=sortBy)
-formula_array = []
+	# Put all IDs in the formula_array
+	for item in sorted_list:
+		formula_array.append(int(item[1]))
 
-for item in sorted_list:
-	formula_array.append(int(item[1]))
+	# Check the IDs in the formula array and add the corresponding int/character to the formula string
+	formula = ""
+	for item in formula_array:
+		if item <= 9:
+			formula += str(item)
+		elif item == 10:
+			formula += '0'
+		elif item == 11:
+			formula += '+'
+		elif item == 12:
+			formula += '-'
+		elif item == 13:
+			formula += '*'
+		elif item == 14:
+			formula += '/'
 
-formula = ""
+	# To be replaced and calculated by FPGA
+	answer = int(eval(formula))
 
-for item in formula_array:
-	if item <= 9:
-		formula += str(item)
-	elif item == 10:
-		formula += '0'
-	elif item == 11:
-		formula += '+'
-	elif item == 12:
-		formula += '-'
-	elif item == 13:
-		formula += '*'
-	elif item == 14:
-		formula += '/'
+	# print("The formula in the image is: %s" % (formula))
+	# print("The answer to that formula is: %d" % (answer))
+	print("%s = %d" % (formula, answer))
 
-answer = int(eval(formula))
-# print("The formula in the image is: %s" % (formula))
-# print("The answer to that formula is: %d" % (answer))
-print("%s = %d" % (formula, answer))
-
-# Make the labels on the image
-vis_util.visualize_boxes_and_labels_on_image_array(
-	image,
-	np.squeeze(boxes),
-	np.squeeze(classes).astype(np.int32),
-	np.squeeze(scores),
-	category_index,
-	use_normalized_coordinates=True,
-	line_thickness=8,
-	min_score_thresh=SCORE_TRESHOLD)
+	# Make the labels on the image
+	vis_util.visualize_boxes_and_labels_on_image_array(
+		image,
+		np.squeeze(boxes),
+		np.squeeze(classes).astype(np.int32),
+		np.squeeze(scores),
+		category_index,
+		use_normalized_coordinates=True,
+		line_thickness=8,
+		min_score_thresh=SCORE_TRESHOLD)
