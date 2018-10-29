@@ -14,9 +14,9 @@ GPIO.setup(10, GPIO.OUT)
 GPIO.setup(11, GPIO.OUT)
 GPIO.setup(12, GPIO.OUT)
 GPIO.setup(13, GPIO.IN)
+GPIO.setup(14, GPIO.IN)
 GPIO.setup(15, GPIO.IN)
 GPIO.setup(16, GPIO.IN)
-GPIO.setup(14, GPIO.IN)
 GPIO.setup(25, GPIO.IN)
 GPIO.setup(26, GPIO.IN)
 GPIO.setup(27, GPIO.IN)
@@ -70,51 +70,47 @@ def waitACKSolution():
 
 try:
     # BEGIN
+
     GPIO.output(2, GPIO.LOW)
     GPIO.output(3, GPIO.LOW)
     GPIO.output(4, GPIO.LOW)
     GPIO.output(5, GPIO.HIGH)
-    print("ACK Begin")
-    print(state1)
-    print(state2)
-    print(state3)
-    if (not state1 and state2 and not state3):
+    print("kaesdwbflhjhwqebflk")
+    while True:
+        if (state1 == 0 and state2 == 1 and state3 == 0):
+            print("ACK Begin")
+            print(state1)
+            print(state2)
+            print(state3)
+            # ADD2
+            GPIO.output(2, GPIO.LOW)
+            GPIO.output(3, GPIO.HIGH)
+            GPIO.output(4, GPIO.HIGH)
+            GPIO.output(5, GPIO.LOW)
+            GPIO.output(11, GPIO.HIGH)
 
-    # ADD2
-        GPIO.output(2, GPIO.LOW)
-        GPIO.output(3, GPIO.HIGH)
-        GPIO.output(4, GPIO.HIGH)
-        GPIO.output(5, GPIO.LOW)
-        GPIO.output(11, GPIO.HIGH)
-    print("ACK Operation")
-    waitACKOperation()
+        if (state1 == 0 and state2 == 1 and state3 == 1):
+            print("ACK Operation")
+            print(state1)
+            print(state2)
+            print(state3)
+            # 3
+            GPIO.output(2, GPIO.LOW)
+            GPIO.output(3, GPIO.LOW)
+            GPIO.output(4, GPIO.LOW)
+            GPIO.output(5, GPIO.LOW)
+            GPIO.output(11, GPIO.HIGH)
+            GPIO.output(12, GPIO.HIGH)
 
-    # 3
-    GPIO.output(2, GPIO.LOW)
-    GPIO.output(3, GPIO.LOW)
-    GPIO.output(4, GPIO.LOW)
-    GPIO.output(5, GPIO.LOW)
-    GPIO.output(11, GPIO.HIGH)
-    GPIO.output(12, GPIO.HIGH)
-    print("ACK number1")
-    waitACKNumber1()
-
-    # 2
-    GPIO.output(11, GPIO.HIGH)
-    GPIO.output(12, GPIO.LOW)
-    print("ACK number2")
-    waitACKNumber2()
-    GPIO.output(2, GPIO.LOW)
-    GPIO.output(3, GPIO.LOW)
-    GPIO.output(4, GPIO.LOW)
-    GPIO.output(5, GPIO.LOW)
-    GPIO.output(6, GPIO.LOW)
-    GPIO.output(7, GPIO.LOW)
-    GPIO.output(8, GPIO.LOW)
-    GPIO.output(9, GPIO.LOW)
-    GPIO.output(10, GPIO.LOW)
-    GPIO.output(11, GPIO.LOW)
-    GPIO.output(12, GPIO.LOW)
+        if (state1 == 1 and state2 == 0 and state3 == 0):
+            print("ACK number1")
+            print(state1)
+            print(state2)
+            print(state3)
+            # 2
+            GPIO.output(11, GPIO.HIGH)
+            GPIO.output(12, GPIO.LOW)
+            break
     waitACKSolution()
     print("ACK Solution")
     print("Solution")
