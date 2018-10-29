@@ -69,20 +69,20 @@ sol3 = GPIO.input(27)
 #     print(state3)
 
 try:
-    # BEGIN
+	# BEGIN
 
-    GPIO.output(2, GPIO.LOW)
-    GPIO.output(3, GPIO.LOW)
-    GPIO.output(4, GPIO.LOW)
-    GPIO.output(5, GPIO.HIGH)
-    sleep(1)
-    print("starting...")
-    #state1 = GPIO.input(13)
-    #state2 = GPIO.input(14)
-    #state3 = GPIO.input(15)
-    #print(state1)
-    #print(state2)
-    #print(state3)
+	GPIO.output(2, GPIO.LOW)
+	GPIO.output(3, GPIO.LOW)
+	GPIO.output(4, GPIO.LOW)
+	GPIO.output(5, GPIO.HIGH)
+	sleep(1)
+	print("starting...")
+	#state1 = GPIO.input(13)
+	#state2 = GPIO.input(14)
+	#state3 = GPIO.input(15)
+	#print(state1)
+	#print(state2)
+	#print(state3)
 	
 	while(True):
 		if (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 0):
@@ -121,13 +121,13 @@ try:
 		print(GPIO.input(13))
 		print(GPIO.input(14))
 		print(GPIO.input(15))
-    #
+	#
 		sleep(1)
-    #waitACKSolution()
-    print("ACK Solution")
-    print("Solution")
-    print(GPIO.input(25))
-    print(GPIO.input(26))
-    print(GPIO.input(27))
+	#waitACKSolution()
+	print("ACK Solution")
+	print("Solution")
+	print(GPIO.input(25))
+	print(GPIO.input(26))
+	print(GPIO.input(27))
 finally:
-    print("ending")
+	print("ending")
