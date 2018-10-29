@@ -1,8 +1,116 @@
 import re
+import RPi.GPIO as GPIO
+
+from time import sleep
 
 SIGNS_1 = ('*', '/')
 SIGNS_2 = ('+', '-')
 SIGNS_3 = ('(', ')')
+
+def send_instruction(num1, sign, num2):
+	acknowledged = False
+
+	GPIO.setmode(GPIO.BCM)
+	for pin in range(2, 27):
+		GPIO.setup(pin, GPIO.OUT)
+		GPIO.output(pin, GPIO.LOW)
+	for pin in range(13, 16):
+		GPIO.setup(pin, GPIO.IN)
+
+	for pin in range (25,27):
+		GPIO.setup(pin, GPIO.IN)
+
+	# Send begin calculation
+	GPIO.output(2, GPIO.LOW)
+	GPIO.output(3, GPIO.LOW)
+	GPIO.output(4, GPIO.LOW)
+	GPIO.output(5, GPIO.HIGH)
+
+	#wait for ack start calc
+	while(!acknowledged):
+		if (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 0):
+			acknowledged = True
+	acknowledged = False
+
+	#send operation type:
+	GPIO.output(11, GPIO.HIGH)
+	if sign == '+' :
+		GPIO.output(2, GPIO.LOW)
+		GPIO.output(3, GPIO.HIGH)
+		GPIO.output(4, GPIO.HIGH)
+		GPIO.output(5, GPIO.LOW)
+	elif sign == '-':
+		GPIO.output(2, GPIO.LOW)
+		GPIO.output(3, GPIO.HIGH)
+		GPIO.output(4, GPIO.HIGH)
+		GPIO.output(5, GPIO.HIGH)
+	elif sign == '*':
+		GPIO.output(2, GPIO.HIGH)
+		GPIO.output(3, GPIO.LOW)
+		GPIO.output(4, GPIO.LOW)
+		GPIO.output(5, GPIO.LOW)
+	elif sign == '/':
+		GPIO.output(2, GPIO.HIGH)
+		GPIO.output(3, GPIO.LOW)
+		GPIO.output(4, GPIO.LOW)
+		GPIO.output(5, GPIO.HIGH)
+
+	#wait for ack operation type
+	while(!acknowledged):
+		if (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
+			acknowledged = True
+	acknowledged = False
+
+	#send num1
+	num1_binary = '{0:11b}'.format(num1)
+	for pin in range (2, 12):
+		if num1_binary[pin-2] == 1:
+			GPIO.output(pin, GPIO.HIGH)
+		else:
+			GPIO.output(pin, GPIO.LOW)
+
+	#wait for ack num1
+	while(!acknowledged):
+		if (GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 0):
+			acknowledged = True
+	acknowledged = False
+
+	#send num2
+	num2_binary = '{0:11b}'.format(num2)
+	for pin in range (2, 12):
+		if num2_binary[pin-2] == 1:
+			GPIO.output(pin, GPIO.HIGH)
+		else:
+			GPIO.output(pin, GPIO.LOW)
+
+	#wait for ack num2
+	while(!acknowledged):
+		if (GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
+			acknowledged = True
+	acknowledged = False
+
+	#wait for solution header
+	while(!acknowledged):
+		if (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
+			acknowledged = True
+	acknowledged = False
+
+	#get the solution (15 bits long)
+	solution = "010101010101010"
+	for pin in range (13, 27):
+		solution[pin-13] = GPIO.input(pin)
+
+	print(solution)
+	solution_int = int(solution, 2)
+	print(solution_int)
+
+	#send end calculation instruction
+	GPIO.output(2, GPIO.LOW)
+	GPIO.output(3, GPIO.LOW)
+	GPIO.output(4, GPIO.HIGH)
+	GPIO.output(5, GPIO.HIGH)
+
+	return solution_int
 
 # Communicates a certain calculation to the fpga and waits for an answer.
 #change to communicate to fpga
@@ -68,8 +176,6 @@ def check_formula(formula):
 		return "Error"
 	if formula[0] == '+':
 		new_formula = formula[1:]
-	elif formula[0] == '-':
-		return "Error"
 	else:
 		new_formula = formula
 	for char_pos in range(0, len(new_formula)):
@@ -82,10 +188,10 @@ def check_formula(formula):
 # In and output. Should be retrieved form the 
 # formula = "(0-512)+12/6*256-1024-3*12"
 formula = "7*((5+3)*2)+2"
-# formula = check_formula(formula)
+formula = check_formula(formula)
 fin_answer = 0
-# if formula != "Error":
+if formula != "Error":
 	# print(get_formula_answer(formula))
-fin_answer = formula_to_array(formula)
-# else:
-print(fin_answer)
+	print(formula_to_array(formula))
+else:
+	print("Error")
