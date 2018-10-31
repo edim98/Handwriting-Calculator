@@ -24,14 +24,17 @@ def send_instruction(num1, sign, num2):
 	if sign == '-':
 		num2 *= -1
 
+	#make num1 into two's commplement binary
 	two_complement_num1 = bin(num1 & int("1"*11, 2))[2:]
 	two_complement_11bit_num1 = ("{0:0>%s}" % (11)).format(two_complement_num1)
 	print(two_complement_11bit_num1)
 
+	#make num2 into two's commplement binary
 	two_complement_num2 = bin(num2 & int("1"*11, 2))[2:]
 	two_complement_11bit_num2 = ("{0:0>%s}" % (11)).format(two_complement_num2)
 	print(two_complement_11bit_num2)
 
+	#communicate with the fpga to get the calculations
 	while not finished:
 		error = False
 		GPIO.setmode(GPIO.BCM)
@@ -228,21 +231,25 @@ def formula_to_array(formula):
 		formula = formula.replace(replace_str, str(answer), 1)
 		print(formula)
 
-	if formula[0] == '-':
-		formula = formula.replace('-', "0-", 1)
-
 	temp = ""
 	array = []
-	for character in range (0, len(formula)):
-		if re.match(r"[0-9]", formula[character]):
-			temp += str(formula[character])
+	skip = False
+
+	for index, character in enumerate(formula):
+		if re.match(r"[0-9]", character):
+			temp += character
+		elif character == '-' and (formula[index-1] in SIGNS_1 or formula[index-1] in SIGNS_2 or (index == 0)):
+			temp += character
 		else:
 			if len(temp) != 0:
 				array.append(int(temp))
 				temp = ""
-			array.append(formula[character])
+			array.append(character)
 	if len(temp) != 0:
 		array.append(int(temp))
+
+	print(array)
+
 	return get_calcs(get_calcs(array, SIGNS_1), SIGNS_2)[0]
 
 # Executes all functions necessary to calculate the formula string and get the answer
@@ -269,8 +276,8 @@ def check_formula(formula):
 # In and output. Should be retrieved form the 
 # formula
 # formula = str(input("Enter the operation you want to perform: "))
-formula = "2-5"
-formula = check_formula(formula)
+formula = "-5*-3--7+666/6"
+# formula = check_formula(formula)
 fin_answer = 0
 if formula != "Error":
 	# print(get_formula_answer(formula))
