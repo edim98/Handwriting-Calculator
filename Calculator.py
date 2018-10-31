@@ -1,5 +1,5 @@
 import re
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 
 SIGNS_1 = ('*', '/')
 SIGNS_2 = ('+', '-')
