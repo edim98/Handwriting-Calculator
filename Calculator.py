@@ -9,6 +9,7 @@ def send_instruction(num1, sign, num2):
 	acknowledged = False
 	finished = False
 	error = False
+	solution_int = 0
 
 	if sign == '-':
 		num2 *= -1
@@ -37,7 +38,7 @@ def send_instruction(num1, sign, num2):
 		GPIO.output(5, GPIO.HIGH)
 
 		#wait for ack start calc
-		print("waiting for ack start calc")
+		#print("waiting for ack start calc")
 		while(not acknowledged):
 			if (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 0):
 				acknowledged = True
@@ -84,7 +85,7 @@ def send_instruction(num1, sign, num2):
 				error = True
 				print("Received error")
 				break;
-			print("waiting for ack operation type")
+			# print("waiting for ack operation type")
 		acknowledged = False
 		if error:
 			break
@@ -108,7 +109,7 @@ def send_instruction(num1, sign, num2):
 				break;
 			elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
 				print("debug")
-			print("waiting for ack num1")
+			# print("waiting for ack num1")
 		acknowledged = False
 		if error:
 			break
@@ -128,7 +129,7 @@ def send_instruction(num1, sign, num2):
 				error = True
 				print("Received error")
 				break;
-			print("waiting for ack num2")
+			# print("waiting for ack num2")
 		acknowledged = False
 		if error:
 			break
@@ -139,9 +140,13 @@ def send_instruction(num1, sign, num2):
 				acknowledged = True
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
-				print("Received error")
+				print("Received Error")
 				break;
-			print("waiting for ack solution header")
+			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
+                                # overflow = True
+                                print("Received Overflow")
+                                break;
+			# print("waiting for ack solution header")
 		acknowledged = False
 		if error:
 			break
@@ -162,6 +167,8 @@ def send_instruction(num1, sign, num2):
 		print(solution_str)
 		print(isinstance(solution_str, str))
 		solution_int = int(solution_str, 2)
+		if GPIO.input(16) == 1:
+			solution_int = solution_int - 4096
 		print(solution_int)
 
 		finished = True
@@ -241,8 +248,9 @@ def check_formula(formula):
 	return new_formula
 
 # In and output. Should be retrieved form the 
-# formula = "(0-512)+12/6*256-1024-3*12"
-formula = "9-7+1"
+# formula
+# formula = str(input("Enter the operation you want to perform: "))
+formula = "1000*1000"
 formula = check_formula(formula)
 fin_answer = 0
 if formula != "Error":
