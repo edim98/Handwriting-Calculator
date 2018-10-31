@@ -5,12 +5,22 @@ SIGNS_1 = ('*', '/')
 SIGNS_2 = ('+', '-')
 SIGNS_3 = ('(', ')')
 
+def reset_pins_to_low():
+	for pin in range(2, 13):
+		GPIO.output(pin, GPIO.LOW)
+
 def send_instruction(num1, sign, num2):
 	acknowledged = False
 	finished = False
 	error = False
+	overflow = False
 	solution_int = 0
 
+	#check for overflow before sending
+	if num1 > 1023 or num2 > 1023 or num1 < -1024 or num2 < -1024:
+		return "Input number too high"
+
+	#make sbutract calculations into add calculations
 	if sign == '-':
 		num2 *= -1
 
@@ -45,9 +55,10 @@ def send_instruction(num1, sign, num2):
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
 				print("Received error")
-				break;
+				break
 		acknowledged = False
-		if error:
+		if error or overflow:
+			reset_pins_to_low()
 			break
 
 		#send operation type:
@@ -84,10 +95,11 @@ def send_instruction(num1, sign, num2):
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
 				print("Received error")
-				break;
+				break
 			# print("waiting for ack operation type")
 		acknowledged = False
-		if error:
+		if error or overflow:
+			reset_pins_to_low()
 			break
 
 		#send num1
@@ -106,12 +118,13 @@ def send_instruction(num1, sign, num2):
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
 				print("Received error")
-				break;
+				break
 			elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
 				print("debug")
 			# print("waiting for ack num1")
 		acknowledged = False
-		if error:
+		if error or overflow:
+			reset_pins_to_low()
 			break
 
 		#send num2
@@ -128,10 +141,11 @@ def send_instruction(num1, sign, num2):
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
 				print("Received error")
-				break;
+				break
 			# print("waiting for ack num2")
 		acknowledged = False
-		if error:
+		if error or overflow:
+			reset_pins_to_low()
 			break
 
 		#wait for solution header
@@ -141,14 +155,15 @@ def send_instruction(num1, sign, num2):
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
 				print("Received Error")
-				break;
-			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-                                # overflow = True
-                                print("Received Overflow")
-                                break;
+				break
+			elif (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
+					overflow = True
+					print("Received Overflow")
+					break;
 			# print("waiting for ack solution header")
 		acknowledged = False
-		if error:
+		if error or overflow:
+			reset_pins_to_low()
 			break
 
 		#get the solution (15 bits long)
@@ -157,8 +172,7 @@ def send_instruction(num1, sign, num2):
 			solution[pin-16] = GPIO.input(pin)
 
 		#reset all out pins to low
-		for pin in range(2, 13):
-			GPIO.output(pin, GPIO.LOW)
+		reset_pins_to_low()
 
 		#give back solution
 		solution_str = ""
@@ -167,7 +181,7 @@ def send_instruction(num1, sign, num2):
 		print(solution_str)
 		print(isinstance(solution_str, str))
 		solution_int = int(solution_str, 2)
-		if GPIO.input(16) == 1:
+		if solution_str[0] == '1':
 			solution_int = solution_int - 4096
 		print(solution_int)
 
@@ -199,12 +213,17 @@ def get_calcs(start_array, signs):
 # Keeps the integers as big as possible (255 stays 255 and does not become 2, 5, 5)
 def formula_to_array(formula):
 	print(formula)
+	#check for brackets
 	while ')' in formula:
+		#take part up to the first )
 		old_partition = formula.partition(')')[0]
+		#reverse that part and take the part up to the first (
 		reversed_partition = old_partition[::-1]
 		reversed_partition = reversed_partition.partition('(')[0]
+		#reverse that part again and put that part as a new formula into this function (recursion)
 		new_partition = reversed_partition[::-1]
 		answer = formula_to_array(new_partition)
+		#replace the taken formula part with the answer
 		replace_str = ''.join(['(' , new_partition, ')'])
 		formula = formula.replace(replace_str, str(answer), 1)
 		print(formula)
@@ -250,7 +269,7 @@ def check_formula(formula):
 # In and output. Should be retrieved form the 
 # formula
 # formula = str(input("Enter the operation you want to perform: "))
-formula = "1000*1000"
+formula = "2-5"
 formula = check_formula(formula)
 fin_answer = 0
 if formula != "Error":
