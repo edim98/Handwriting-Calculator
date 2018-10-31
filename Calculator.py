@@ -7,7 +7,7 @@ SIGNS_3 = ('(', ')')
 
 def reset_pins_to_low():
 	for pin in range(2, 13):
-	GPIO.output(pin, GPIO.LOW)
+	    GPIO.output(pin, GPIO.LOW)
 
 def send_instruction(num1, sign, num2):
 	acknowledged = False
