@@ -1,5 +1,5 @@
 import re
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 
 SIGNS_1 = ('*', '/')
 SIGNS_2 = ('+', '-')
@@ -24,14 +24,17 @@ def send_instruction(num1, sign, num2):
 	if sign == '-':
 		num2 *= -1
 
+	#make num1 into two's commplement binary
 	two_complement_num1 = bin(num1 & int("1"*11, 2))[2:]
 	two_complement_11bit_num1 = ("{0:0>%s}" % (11)).format(two_complement_num1)
 	print(two_complement_11bit_num1)
 
+	#make num2 into two's commplement binary
 	two_complement_num2 = bin(num2 & int("1"*11, 2))[2:]
 	two_complement_11bit_num2 = ("{0:0>%s}" % (11)).format(two_complement_num2)
 	print(two_complement_11bit_num2)
 
+	#communicate with the fpga to get the calculations
 	while not finished:
 		error = False
 		GPIO.setmode(GPIO.BCM)
@@ -204,7 +207,7 @@ def get_calcs(start_array, signs):
 	for i in range(0, len(start_array)):
 		if start_array[i] in signs:
 			end_array.pop(len(end_array)-1)
-			start_array[i+1] = fpga_calc(start_array[i-1], start_array[i], start_array[i+1])
+			start_array[i+1] = send_instruction(start_array[i-1], start_array[i], start_array[i+1])
 		else:
 			end_array.append(start_array[i])
 	return end_array
