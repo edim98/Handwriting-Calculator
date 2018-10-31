@@ -5,6 +5,10 @@ SIGNS_1 = ('*', '/')
 SIGNS_2 = ('+', '-')
 SIGNS_3 = ('(', ')')
 
+def reset_pins_to_low():
+	for pin in range(2, 13):
+	GPIO.output(pin, GPIO.LOW)
+
 def send_instruction(num1, sign, num2):
 	acknowledged = False
 	finished = False
@@ -48,7 +52,8 @@ def send_instruction(num1, sign, num2):
 				print("Received error")
 				break;
 		acknowledged = False
-		if error:
+		if error or overflow:
+			reset_pins_to_low()
 			break
 
 		#send operation type:
@@ -88,7 +93,8 @@ def send_instruction(num1, sign, num2):
 				break;
 			# print("waiting for ack operation type")
 		acknowledged = False
-		if error:
+		if error or overflow:
+			reset_pins_to_low()
 			break
 
 		#send num1
@@ -112,7 +118,8 @@ def send_instruction(num1, sign, num2):
 				print("debug")
 			# print("waiting for ack num1")
 		acknowledged = False
-		if error:
+		if error or overflow:
+			reset_pins_to_low()
 			break
 
 		#send num2
@@ -132,7 +139,8 @@ def send_instruction(num1, sign, num2):
 				break;
 			# print("waiting for ack num2")
 		acknowledged = False
-		if error:
+		if error or overflow:
+			reset_pins_to_low()
 			break
 
 		#wait for solution header
@@ -144,12 +152,13 @@ def send_instruction(num1, sign, num2):
 				print("Received Error")
 				break;
 			elif (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-                                overflow = True
-                                print("Received Overflow")
-                                break;
+					overflow = True
+					print("Received Overflow")
+					break;
 			# print("waiting for ack solution header")
 		acknowledged = False
 		if error or overflow:
+			reset_pins_to_low()
 			break
 
 		#get the solution (15 bits long)
@@ -158,9 +167,8 @@ def send_instruction(num1, sign, num2):
 			solution[pin-16] = GPIO.input(pin)
 
 		#reset all out pins to low
-		for pin in range(2, 13):
-			GPIO.output(pin, GPIO.LOW)
-
+		reset_pins_to_low()
+		
 		#give back solution
 		solution_str = ""
 		for binary in solution:
@@ -168,7 +176,7 @@ def send_instruction(num1, sign, num2):
 		print(solution_str)
 		print(isinstance(solution_str, str))
 		solution_int = int(solution_str, 2)
-		if GPIO.input(16) == 1:
+		if solution_str[0] == '1':
 			solution_int = solution_int - 4096
 		print(solution_int)
 
