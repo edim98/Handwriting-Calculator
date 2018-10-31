@@ -1,5 +1,5 @@
 import re
-import RPi.GPIO as GPIO
+# import RPi.GPIO as GPIO
 
 SIGNS_1 = ('*', '/')
 SIGNS_2 = ('+', '-')
@@ -204,7 +204,7 @@ def get_calcs(start_array, signs):
 	for i in range(0, len(start_array)):
 		if start_array[i] in signs:
 			end_array.pop(len(end_array)-1)
-			start_array[i+1] = send_instruction(start_array[i-1], start_array[i], start_array[i+1])
+			start_array[i+1] = fpga_calc(start_array[i-1], start_array[i], start_array[i+1])
 		else:
 			end_array.append(start_array[i])
 	return end_array
@@ -228,21 +228,25 @@ def formula_to_array(formula):
 		formula = formula.replace(replace_str, str(answer), 1)
 		print(formula)
 
-	if formula[0] == '-':
-		formula = formula.replace('-', "0-", 1)
-
 	temp = ""
 	array = []
-	for character in range (0, len(formula)):
-		if re.match(r"[0-9]", formula[character]):
-			temp += str(formula[character])
+	skip = False
+
+	for index, character in enumerate(formula):
+		if re.match(r"[0-9]", character):
+			temp += character
+		elif character == '-' and (formula[index-1] in SIGNS_1 or formula[index-1] in SIGNS_2 or (index == 0)):
+			temp += character
 		else:
 			if len(temp) != 0:
 				array.append(int(temp))
 				temp = ""
-			array.append(formula[character])
+			array.append(character)
 	if len(temp) != 0:
 		array.append(int(temp))
+
+	print(array)
+
 	return get_calcs(get_calcs(array, SIGNS_1), SIGNS_2)[0]
 
 # Executes all functions necessary to calculate the formula string and get the answer
@@ -269,8 +273,8 @@ def check_formula(formula):
 # In and output. Should be retrieved form the 
 # formula
 # formula = str(input("Enter the operation you want to perform: "))
-formula = "2-5"
-formula = check_formula(formula)
+formula = "-5*-3--7+666/6"
+# formula = check_formula(formula)
 fin_answer = 0
 if formula != "Error":
 	# print(get_formula_answer(formula))
