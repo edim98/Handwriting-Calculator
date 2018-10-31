@@ -7,7 +7,7 @@ SIGNS_3 = ('(', ')')
 
 def reset_pins_to_low():
 	for pin in range(2, 13):
-	    GPIO.output(pin, GPIO.LOW)
+	GPIO.output(pin, GPIO.LOW)
 
 def send_instruction(num1, sign, num2):
 	acknowledged = False
@@ -19,6 +19,7 @@ def send_instruction(num1, sign, num2):
 	#check for overflow before sending
 	if num1>1023 or num2>1023:
 		return "Input number too high"
+		break
 
 	#make sbutract calculations into add calculations
 	if sign == '-':
