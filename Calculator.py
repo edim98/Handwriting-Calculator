@@ -19,7 +19,6 @@ def send_instruction(num1, sign, num2):
 	#check for overflow before sending
 	if num1 > 1023 or num2 > 1023 or num1 < -1024 or num2 < -1024:
 		return "Input number too high"
-		break
 
 	#make sbutract calculations into add calculations
 	if sign == '-':
