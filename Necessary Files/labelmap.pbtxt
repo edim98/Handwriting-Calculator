@@ -67,3 +67,13 @@ item {
   id: 14
   name: '/'
 }
+
+item {
+  id: 15
+  name: '('
+}
+
+item {
+  id: 16
+  name: ')'
+}
