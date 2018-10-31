@@ -1,5 +1,5 @@
 import re
-import RPi.GPIO as GPIO
+# import RPi.GPIO as GPIO
 
 SIGNS_1 = ('*', '/')
 SIGNS_2 = ('+', '-')
@@ -276,7 +276,7 @@ def check_formula(formula):
 # In and output. Should be retrieved form the 
 # formula
 # formula = str(input("Enter the operation you want to perform: "))
-formula = "-5*-3--7+666/6"
+formula = "3-5"
 # formula = check_formula(formula)
 fin_answer = 0
 if formula != "Error":
