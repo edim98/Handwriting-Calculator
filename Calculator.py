@@ -16,6 +16,12 @@ def send_instruction(num1, sign, num2):
 	overflow = False
 	solution_int = 0
 
+	#check for overflow before sending
+	if num1>1023 or num2>1023:
+		return "Input number too high"
+		break
+
+	#make sbutract calculations into add calculations
 	if sign == '-':
 		num2 *= -1
 
@@ -50,7 +56,7 @@ def send_instruction(num1, sign, num2):
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
 				print("Received error")
-				break;
+				break
 		acknowledged = False
 		if error or overflow:
 			reset_pins_to_low()
@@ -90,7 +96,7 @@ def send_instruction(num1, sign, num2):
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
 				print("Received error")
-				break;
+				break
 			# print("waiting for ack operation type")
 		acknowledged = False
 		if error or overflow:
@@ -113,7 +119,7 @@ def send_instruction(num1, sign, num2):
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
 				print("Received error")
-				break;
+				break
 			elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
 				print("debug")
 			# print("waiting for ack num1")
@@ -136,7 +142,7 @@ def send_instruction(num1, sign, num2):
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
 				print("Received error")
-				break;
+				break
 			# print("waiting for ack num2")
 		acknowledged = False
 		if error or overflow:
@@ -150,7 +156,7 @@ def send_instruction(num1, sign, num2):
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
 				print("Received Error")
-				break;
+				break
 			elif (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 					overflow = True
 					print("Received Overflow")
@@ -168,7 +174,7 @@ def send_instruction(num1, sign, num2):
 
 		#reset all out pins to low
 		reset_pins_to_low()
-		
+
 		#give back solution
 		solution_str = ""
 		for binary in solution:
@@ -208,12 +214,17 @@ def get_calcs(start_array, signs):
 # Keeps the integers as big as possible (255 stays 255 and does not become 2, 5, 5)
 def formula_to_array(formula):
 	print(formula)
+	#check for brackets
 	while ')' in formula:
+		#take part up to the first )
 		old_partition = formula.partition(')')[0]
+		#reverse that part and take the part up to the first (
 		reversed_partition = old_partition[::-1]
 		reversed_partition = reversed_partition.partition('(')[0]
+		#reverse that part again and put that part as a new formula into this function (recursion)
 		new_partition = reversed_partition[::-1]
 		answer = formula_to_array(new_partition)
+		#replace the taken formula part with the answer
 		replace_str = ''.join(['(' , new_partition, ')'])
 		formula = formula.replace(replace_str, str(answer), 1)
 		print(formula)
