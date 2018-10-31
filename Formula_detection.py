@@ -6,6 +6,8 @@ import numpy as np
 import tensorflow as tf
 import sys
 
+sys.path.append("..")
+
 from utils import label_map_util as lmu
 from utils import visualization_utils as vu
 from picamera.array import PiRGBArray
