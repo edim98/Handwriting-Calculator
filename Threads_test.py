@@ -1,5 +1,7 @@
 import threading
 import pdb
+from tkinter import *
+from PIL import ImageTk, Image
 # import pyttsx3
 
 try:
@@ -11,7 +13,7 @@ import time
 
 
 # <=~=> Class that implements the Graphical User Interface
-class GUI(threading.Thread):
+class GUI():
 
     # -> formula which will be displayed
     formula = ''
@@ -20,11 +22,17 @@ class GUI(threading.Thread):
     # -> threadID helps differentiate between threads
     # -> queue is the shared queue this thread will read from
     # -> exit is the flag which tells the thread to stop
-    def __init__(self, threadID, queue):
-        threading.Thread.__init__(self)
+    def __init__(self, queue):
         self.queue = queue
-        self.threadID = threadID
         self.exit = 0
+
+        self.root = Tk()
+        self.root.geometry("800x600")
+        self.image = ImageTk.PhotoImage(Image.open('./image.jpg').resize((800, 600), Image.ANTIALIAS))
+        self.panel = Label(self.root, image = self.image)
+        self.panel.pack(side = "bottom", fill = X)
+        self.root.update_idletasks()
+        self.root.update()
 
     # --- Basic setter
     # Sets a new value of < formula >
@@ -47,11 +55,18 @@ class GUI(threading.Thread):
             frame = self.queue.get()
             print("I am displaying frame number: " + str(frame))
 
+            newImage = ImageTk.PhotoImage(Image.open(frame).resize((800, 600), Image.ANTIALIAS))
+            self.panel.configure(image = newImage)
+            self.panel.image = newImage
+            self.root.update_idletasks()
+            self.root.update()
+
             if(self.formula != ''):
                 print("I got a formula: " + self.formula)
                 self.formula = ''
 
             time.sleep(1)
+
             s.release()
 
         print("GUI shutting down...")
@@ -62,7 +77,9 @@ class GUI(threading.Thread):
 class backgroundApp(threading.Thread):
 
     # -> Random values for formulas.
-    formulas = ['3+7/(2*5)', '2*3*4', '1-2+10/3']
+    formulas = ['x^2+y^2', '1/3', '3+2']
+
+    frames = ['./image.jpg', './dog.jpg', './Birds.jpg', './dude.jpg', './trump.jpg', './wow.jpg']
 
     # -> Formulas queue. Testing purposes.
     formulasQueue = queue.Queue(0)
@@ -70,13 +87,14 @@ class backgroundApp(threading.Thread):
     # -> Formula found by character recognition.
     formula = ''
 
+    exit = 0
+
     # --- Main constructor
     # -> queue is the shared queue this thread will write to
     # -> threadID helps differentiate between threads
     def __init__(self, threadID, queue):
         threading.Thread.__init__(self)
         self.queue = queue
-        self.threadID = threadID
 
         # For testing purposes.
         for i in range(0, 3):
@@ -87,10 +105,12 @@ class backgroundApp(threading.Thread):
     # and send it to the GUI thread.
     def run(self):
         print("Starting background app...")
-        for i in range(1, 10):
+        #i = 0
+        #while self.exit == 0:
+        for i in range(0, 6):
             s.acquire()
-            self.queue.put(i)
-            if i % 3 == 0:
+            self.queue.put(self.frames[i])
+            if i % 2 == 0:
                 while self.formula == '':
                     self.formula = self.formulasQueue.get()
                     threadGUI.setFormula(self.formula)
@@ -98,6 +118,7 @@ class backgroundApp(threading.Thread):
             time.sleep(1)
             if(self.formulasQueue.empty()):
                 threadGUI.setExit(1)
+                self.exit = 1
             s.release()
         print("App shutting down...")
         return
@@ -111,17 +132,17 @@ workQueue = queue.Queue(10)
 # --- Semaphore for allowing certain threads to access shared memory at a time.
 s = threading.Semaphore(3)
 
-# --- Setup and start the GUI thread.
-threadGUI = GUI(1, workQueue, '')
-threadGUI.start()
+# --- Setup the GUI.
+threadGUI = GUI(workQueue)
 
 # --- Setup and start the BackgroundApp thread.
 threadBackgroundApp = backgroundApp(2, workQueue)
 threadBackgroundApp.start()
 
+# -- Start the main Thread
+threadGUI.run()
 
 # --- Wait for both threads to finish and join them.
 threadBackgroundApp.join()
-threadGUI.join()
 
 print("DONE!")
