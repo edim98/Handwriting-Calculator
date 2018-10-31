@@ -9,6 +9,7 @@ def send_instruction(num1, sign, num2):
 	acknowledged = False
 	finished = False
 	error = False
+	overflow = False
 	solution_int = 0
 
 	if sign == '-':
@@ -142,13 +143,13 @@ def send_instruction(num1, sign, num2):
 				error = True
 				print("Received Error")
 				break;
-			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-                                # overflow = True
+			elif (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
+                                overflow = True
                                 print("Received Overflow")
                                 break;
 			# print("waiting for ack solution header")
 		acknowledged = False
-		if error:
+		if error or overflow:
 			break
 
 		#get the solution (15 bits long)
@@ -250,7 +251,7 @@ def check_formula(formula):
 # In and output. Should be retrieved form the 
 # formula
 # formula = str(input("Enter the operation you want to perform: "))
-formula = "1000*1000"
+formula = "2-5"
 formula = check_formula(formula)
 fin_answer = 0
 if formula != "Error":
