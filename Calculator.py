@@ -16,8 +16,21 @@ def send_instruction(num1, sign, num2):
 	overflow = False
 	solution_int = 0
 
+	# Set pins as in and output
+	GPIO.setmode(GPIO.BCM)
+	for pin in range(2, 13):
+		GPIO.setup(pin, GPIO.OUT)
+		GPIO.output(pin, GPIO.LOW)
+	for pin in range(13, 28):
+		GPIO.setup(pin, GPIO.IN)
+
 	#check for overflow before sending
 	if num1 > 1023 or num2 > 1023 or num1 < -1024 or num2 < -1024:
+		# Send Error
+		GPIO.output(2, GPIO.HIGH)
+		GPIO.output(3, GPIO.HIGH)
+		GPIO.output(4, GPIO.HIGH)
+		GPIO.output(5, GPIO.HIGH)
 		return "Input number too high"
 
 	#make sbutract calculations into add calculations
@@ -37,12 +50,6 @@ def send_instruction(num1, sign, num2):
 	#communicate with the fpga to get the calculations
 	while not finished:
 		error = False
-		GPIO.setmode(GPIO.BCM)
-		for pin in range(2, 13):
-			GPIO.setup(pin, GPIO.OUT)
-			GPIO.output(pin, GPIO.LOW)
-		for pin in range(13, 28):
-			GPIO.setup(pin, GPIO.IN)
 
 		# Send begin calculation
 		GPIO.output(2, GPIO.LOW)
@@ -275,8 +282,8 @@ def check_formula(formula):
 
 # In and output. Should be retrieved form the 
 # formula
-# formula = str(input("Enter the operation you want to perform: "))
-formula = "3-5"
+formula = str(input("Enter the operation you want to perform: "))
+# formula = "-5*-3--7+666/6"
 # formula = check_formula(formula)
 fin_answer = 0
 if formula != "Error":
