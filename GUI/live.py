@@ -20,7 +20,7 @@ class Live:
         self.stopEvent = None
 
         self.root = Tk()
-        self.root.geometry("820x800")
+        self.root.geometry("640x600")
         self.root.resizable(width = False, height = False)
 
         self.panel = None
@@ -28,13 +28,13 @@ class Live:
         # btn = tki.Button(self.root, text = "Capture operation", command = self.captureImage)
         # btn.pack(side="bottom", fill="both", expand="yes", padx=10, pady=5)
 
-        self.canvas = Canvas(self.root, height = 90)
-        self.canvas.pack(side = "bottom", fill = "both", expand = "yes", padx = 5, pady = 5)
-        x1 = 5
-        y1 = 5
-        x2 = 805
-        y2 = 85
-        radius = 360
+        self.canvas = Canvas(self.root, height = 190)
+        self.canvas.pack(side = "bottom", fill = "both", expand = "yes")
+        x1 = 120
+        y1 = 50
+        x2 = 520
+        y2 = 140
+        radius = 25
         points = [x1 + radius, y1,
                   x1 + radius, y1,
                   x2 - radius, y1,
@@ -55,11 +55,11 @@ class Live:
                   x1, y1 + radius,
                   x1, y1 + radius,
                   x1, y1]
-        self.img = Image.open(os.path.abspath("ProjectImages\image.jpg")).resize((800, 600), Image.ANTIALIAS)
+        self.img = Image.open(os.path.abspath("ProjectImages\image.jpg")).resize((640, 190), Image.ANTIALIAS)
         self.image = ImageTk.PhotoImage(self.img)
-        self.canvas.create_image(0, 0, image = self.image)
-        self.canvas.create_polygon(points, fill = "#c7261a", smooth=True, outline = "black", width = 1)
-        self.canvas.create_text(405, 30, fill = "black", text = "This is the result:", font = ("Engravers MT", 10))
+        self.canvas.create_image(0, 0, image = self.image, anchor = "nw")
+        self.canvas.create_polygon(points, fill = "white", smooth=True)
+        self.canvas.create_text(325, 30, fill = "black", text = "This is the result:", font = ("Engravers MT", 10))
 
         self.stopEvent = threading.Event()
         self.thread = threading.Thread(target=self.videoLoop, args=())
@@ -77,7 +77,7 @@ class Live:
         try:
             while not self.stopEvent.is_set():
                 self.frame = self.vs.read()
-                self.frame = imutils.resize(self.frame, width=820)
+                self.frame = imutils.resize(self.frame, width=640, height = 480)
 
                 image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
                 image = Image.fromarray(image)
