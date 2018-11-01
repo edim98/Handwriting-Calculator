@@ -42,6 +42,7 @@ ENTITY calculator IS
 	led8 : OUT std_logic;
 	led9 : OUT std_logic;
 	HEX01 : OUT std_logic;
+	dig0, dig1, dig2, dig3, dig4 : OUT std_logic_vector(6 DOWNTO 0);
     	reset: 	IN std_logic;
     	clk: 	IN std_logic -- 50MHz clokc
     );
@@ -60,9 +61,45 @@ ARCHITECTURE calculate OF calculator IS
 	signal pi_clk: std_logic;
 	SIGNAL c : INTEGER range 0 to 10000;
 	signal count : integer := 2;
+	signal error : std_logic;
+
+	-- Binary to BCD
+	signal negative : std_logic;
+	signal ones : unsigned (3 downto 0);
+	signal tens : unsigned(3 downto 0);
+	signal hundreds: unsigned(3 downto 0);
+	signal thousands: unsigned(3 downto 0);
+	signal shift : integer := 0;
+	signal shifting : std_logic;
+	SIGNAL shiftresult : std_logic_vector(11 downto 0);
+	signal postivenumber : std_logic_vector(11 downto 0);
 	
+	FUNCTION hex2display (n:std_logic_vector(3 DOWNTO 0)) RETURN std_logic_vector IS
+	VARIABLE res : std_logic_vector(6 DOWNTO 0);
+		BEGIN
+		CASE n IS -- gfedcba; low active
+			WHEN "0000" => RETURN NOT "0111111";
+			WHEN "0001" => RETURN NOT "0000110";
+			WHEN "0010" => RETURN NOT "1011011";
+			WHEN "0011" => RETURN NOT "1001111";
+			WHEN "0100" => RETURN NOT "1100110";
+			WHEN "0101" => RETURN NOT "1101101";
+			WHEN "0110" => RETURN NOT "1111101";
+			WHEN "0111" => RETURN NOT "0000111";
+			WHEN "1000" => RETURN NOT "1111111";
+			WHEN "1001" => RETURN NOT "1101111";
+			WHEN "1010" => RETURN NOT "1110111";
+			WHEN "1011" => RETURN NOT "1111100";
+			WHEN "1100" => RETURN NOT "0111001";
+			WHEN "1101" => RETURN NOT "1011110";
+			WHEN "1110" => RETURN NOT "1111001";
+			WHEN OTHERS => RETURN NOT "1110001";
+		END CASE;
+	END hex2display;
+	
+
 BEGIN
-PROCESS (clk)ss
+PROCESS (clk)
 BEGIN
 IF rising_edge(clk) THEN			--5 khz clock
 	IF c < 5000 THEN
@@ -102,36 +139,14 @@ IF reset = '0' THEN
 	numberoldmultiply <= "00000000000000000000001";
 	numberoldadd <= "000000000000";
 	numbertest <= "00000000000000000000001";
-	led0 <= '0';
-	led1 <= '0';
-	led2 <= '0';
-	led3 <= '0';
-	led4 <= '0';
-	led5 <= '0';
-	led6 <= '0';
-	led7 <= '0';
-	led8 <= '0';
-	led9 <= '0';
-	GPIO13 <= '0';
-	GPIO14 <= '0';
-	GPIO15 <= '0';
-	HEX01 <= '0';
+	shifting <= '0';
+	error <= '0';
 
 ELSIF rising_edge(pi_clk) THEN
-	led0 <= GPIO2;
-	led1 <= GPIO3;
-	led2 <= GPIO4;
-	led3 <= GPIO5;
-	led4 <= GPIO6;
-	led5 <= GPIO7; 
-	led6 <= GPIO8;
-	led7 <= GPIO9;
-	led8 <= GPIO10;
-	led9 <= GPIO11;
-	HEX01 <= GPIO12;
-	
+		
 	CASE state IS
 		WHEN nothing =>
+			shifting <= '0';
 			numberold <= "000000000000";
 			numberoldadd <= "000000000000";
 			numberoldmultiply <= "00000000000000000000001";
@@ -140,11 +155,15 @@ ELSIF rising_edge(pi_clk) THEN
 			IF header = "0001" THEN
 				state := beginnow;
 				headerback <= "010";
+			ELSIF header = "1111" THEN
+				state := nothing;
+				error <= '1';
 			ELSE 
 				state := nothing;
 				headerback <= "000";
 			END IF;
 		WHEN beginnow =>
+			error <= '0';
 			--count := to_integer(unsigned(numberscount));
 			IF header = "0110" THEN
 				state := add;		
@@ -157,6 +176,7 @@ ELSIF rising_edge(pi_clk) THEN
 				state := divide;
 			ELSE 
 				state := nothing;
+				error <= '1';
 				headerback <= "111";
 			END IF;
 		WHEN add => 
@@ -179,6 +199,7 @@ ELSIF rising_edge(pi_clk) THEN
 				--numberoldadd <= "1000000000000";
 			ELSE
 				headerback <= "111";
+				error <= '1';
 				state := nothing;
 			END IF;
 		WHEN multiply =>
@@ -201,8 +222,10 @@ ELSIF rising_edge(pi_clk) THEN
 				headerback <= "011";
 				numberoldmultiply <= "00000000000000000000001";
 				numbertest <= "00000000000000000000001";
+				error <= '1';
 			ELSE
 				headerback <= "111";
+				error <= '1';
 				state := nothing;
 			END IF;
 		WHEN divide =>
@@ -220,16 +243,111 @@ ELSIF rising_edge(pi_clk) THEN
 				state := ready;
 			ELSE
 				headerback <= "111";
+				error <= '1';
 				state := nothing;
 			END IF;
 		WHEN ready =>
 			result <= std_logic_vector(numberold);
 			headerback <= "001";
 			state := nothing;
+			--BCD
+			shifting <= '1';
+			postivenumber <= std_logic_vector(to_unsigned(to_integer(abs(signed(numberold))),result'LENGTH));
 		WHEN OTHERS => state:= nothing;
 	END CASE;
+END IF;
+END PROCESS;
+PROCESS(clk)
 
+BEGIN
+IF reset = '0' THEN
+		dig4 <= NOT "0000000";
+		dig3 <= NOT "0111111";
+		dig2 <= NOT "0111111";
+		dig1 <= NOT "0111111";
+		dig0 <= NOT "0111111";
+ELSIF rising_edge(clk) THEN
+		--Binary to BCD conversion
+
+		IF shift = 0 and shifting = '1' THEN	
+			shiftresult(11 downto 0) <= std_logic_vector(shift_left(unsigned(postivenumber), 1));
+			ones(0) <= postivenumber(11);
+			ones(3 downto 1) <= "000";
+			tens <= "0000";
+			hundreds <= "0000";
+			thousands <= "0000";
+			shift <= 1;
+			IF result(11) = '0' THEN
+				negative <= '0';
+			ELSIF result(11) = '1' THEN
+				negative <= '1';
+			END IF;
+		ELSIF shift /= 0 and shift < 12 and shifting = '1' THEN
+			-- Ones
+			shiftresult(11 downto 0) <= std_logic_vector(shift_left(unsigned(shiftresult),1));
+			IF shiftresult(11) = '1' AND ones >= 5 THEN
+				ones <= "0001" + shift_left(ones + 3, 1);
+			ELSIF shiftresult(11) = '1' AND ones < 5 THEN
+				ones <= "0001" + shift_left(ones, 1);
+			ELSIF shiftresult(11) = '0' AND ones >= 5 THEN
+				ones <= shift_left(ones + 3, 1);
+			ELSIF shiftresult(11) = '0' AND ones < 5 THEN
+				ones <= shift_left(ones, 1);
+			END IF;
+			-- Tens
+			IF (ones(3) = '1' or ones >= 5) AND tens >= 5 THEN
+				tens <= "0001" + shift_left(tens + 3, 1);
+			ELSIF (ones(3) = '1' or ones >= 5) AND tens < 5 THEN
+				tens <= "0001" + shift_left(tens, 1);
+			ELSIF ones(3) = '0' AND ones < 5 AND tens >= 5 THEN
+				tens <= shift_left(tens + 3, 1);
+			ELSIF ones(3) = '0' AND ones < 5 AND tens < 5 THEN
+				tens <= shift_left(tens, 1);
+			END IF;
+			-- Hundreds
+			IF (tens(3) = '1' or tens >= 5) AND hundreds >= 5 THEN					--The addition of 3 will not create problems because the fourth 
+				hundreds <= "0001" + shift_left(hundreds + 3, 1);
+			ELSIF (tens(3) = '1' or tens >= 5) AND hundreds < 5 THEN
+				hundreds <= "0001" + shift_left(hundreds, 1);
+			ELSIF tens(3) = '0' AND tens < 5 AND hundreds >= 5 THEN
+				hundreds <= shift_left(hundreds + 3, 1);
+			ELSIF tens(3) = '0' AND tens < 5 AND hundreds < 5 THEN
+				hundreds <= shift_left(hundreds, 1);
+			END IF;
+			--Thousands
+			IF (hundreds(3) = '1' or hundreds >= 5) AND thousands >= 5 THEN					
+				thousands <= "0001" + shift_left(thousands + 3, 1);
+			ELSIF (hundreds(3) = '1' or hundreds >= 5) AND thousands < 5 THEN
+				thousands <= "0001" + shift_left(thousands, 1);
+			ELSIF hundreds(3) = '0' AND hundreds < 5 AND thousands >= 5 THEN
+				thousands <= shift_left(thousands + 3, 1);
+			ELSIF hundreds(3) = '0' AND hundreds < 5 AND thousands < 5 THEN
+				thousands <= shift_left(thousands, 1);
+			END IF;
+			shift <= shift + 1;
+		END if;
+
+		IF shift = 12 and shifting = '1' THEN
+			dig3 <= hex2display(std_logic_vector(thousands));
+			dig2 <= hex2display(std_logic_vector(hundreds));
+			dig1 <= hex2display(std_logic_vector(tens));
+			dig0 <= hex2display(std_logic_vector(ones));
+			IF negative = '1' THEN
+			dig4 <= NOT "1000000";
+			ELSIF negative = '0' THEN
+			dig4 <= NOT "0000000";
+			END IF;
+		shift <= 0;
+		END IF;
+
+		IF error = '1' THEN
+			dig0 <= NOT "1010000";
+			dig1 <= NOT "1011100";
+			dig2 <= NOT "1010000";
+			dig3 <= NOT "1010000";
+			dig4 <= NOT "1111001";
+		END IF;
+			
 END IF;
 END PROCESS;
 END calculate;
-
