@@ -3,7 +3,7 @@ import pdb
 from tkinter import *
 from PIL import ImageTk, Image
 # import pyttsx3
-
+sys.path.append("..")
 import datetime
 import os
 import cv2
@@ -61,13 +61,14 @@ class GUI():
         self.exit = 0
 
         self.root = Tk()
-        self.root.geometry("640x368")
-        self.image = ImageTk.PhotoImage(Image.open('./image.jpg').resize((800, 600), Image.ANTIALIAS))
+        self.root.geometry("640x480")
+        #self.image = ImageTk.PhotoImage(Image.open('./image.jpg').resize((800, 600), Image.ANTIALIAS))
         self.panel = None
-        self.panel = Label(self.root, image = self.image)
-        self.panel.pack(side = "bottom", fill = X)
+       # self.panel = Label(self.root, image = self.image)
+       # self.panel.pack(side = "bottom", fill = X)
         self.root.update_idletasks()
         self.root.update()
+        print("GUI setup successfully!")
 
     # --- Basic setter
     # Sets a new value of < formula >
@@ -87,20 +88,17 @@ class GUI():
 
         while self.exit == 0:
 
-            s.acquire()
-            if self.queue.empty():
-                s.release()
-            else:
-                if self.panel is None:
-
+            if True:
+                s.acquire()
                 frame = self.queue.get()
                 s.release()
+               #print("frame")
                 newImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                newImage = Image.fromarray(image)
-                newImage = ImageTk.PhotoImage(image)
+                newImage = Image.fromarray(newImage)
+                newImage = ImageTk.PhotoImage(newImage)
 
                 if self.panel is None:
-                    Label(self.root, image = newImage)
+                    self. panel = Label(self.root, image = newImage)
                     self.panel.pack(side = "bottom", fill = X)
                 else:
                     self.panel.configure(image = newImage)
@@ -112,6 +110,7 @@ class GUI():
                 if(self.formula != ''):
                     print("I got a formula: " + self.formula)
                     self.formula = ''
+#                s.release()
 
                 #time.sleep(1)
 
@@ -144,51 +143,30 @@ class backgroundApp(threading.Thread):
         threading.Thread.__init__(self)
         self.queue = queue
 
-        # For testing purposes.
-        # for i in range(0, 3):
-        #     self.formulasQueue.put(self.formulas[i])
-        self.camera = PiCamera()
-        self.camera.resolution = (640, 368)
-        self.camera.framerate = 24
-        self.rawCapture = PiRGBArray(self.camera, size=(640, 368))
-        time.sleep(0.1)
 
     # --- Override the Thread run() method
     # Thread will create frames and put them in the shared queue (where the GUI will read them from). For testing purposes, this thread will "find" a formula every 3 frames
     # and send it to the GUI thread.
     def run(self):
         print("Starting background app...")
-        #i = 0
-        # #while self.exit == 0:
-        # for i in range(0, 6):
-        #     s.acquire()
-        #     self.queue.put(self.frames[i])
-        #     if i % 2 == 0:
-        #         while self.formula == '':
-        #             self.formula = self.formulasQueue.get()
-        #             threadGUI.setFormula(self.formula)
-        #         self.formula = ''
-        #     time.sleep(1)
-        #     if(self.formulasQueue.empty()):
-        #         threadGUI.setExit(1)
-        #         self.exit = 1
-        #     s.release()
-        # print("App shutting down...")
-        # return
-
-        for frame in self.camera.capture_continuous(self.rawCapture, format = 'bgr', use_video_port = True):
-            s.acquire()
-            self.queue.put(frame)
-            s.release()
+       # while True:
+        for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = True):
+            #s.acquire()
+            #self.queue.put(frame)
+            #s.release()
+           # frame = None
+            #camera.capture(frame, 'bgr')
             print('frame generated!')
-            input_image = frame.formula_array
+#            print(frame.array)
+#            print('Capture %dx%d image' % (frame.array[1], frame.array[0]))
+            input_image = frame.array
             expanded_input_image = np.expand_dims(input_image, axis = 0)
-            self.rawCapture.truncate(0)
+            rawCapture.truncate(0)
             print('starting model')
 
             (boxes, scores, classes, num) = sess.run(
                 [detection_boxes, detection_scores, detection_classes, num_detections],
-                feed_dict = {image_tensor: expanded_input_image)}
+                feed_dict = {image_tensor: expanded_input_image})
 
             items_with_good_percentage = 0
             for item in scores[0]:
@@ -227,15 +205,19 @@ class backgroundApp(threading.Thread):
 
             threadGUI.setFormula(formula)
 
-            vu.visualize_boxes_and_labels_on_image_array(
-                input_image,
-                np.squeeze(boxes),
-                np.squeeze(classes).astype(np.int32),
-                np.squeeze(scores),
-                cat_index,
-                use_normalized_coordinates=True,
-                line_thickness=8,
-                min_score_thresh=SCORE_TRESHOLD)
+#            vu.visualize_boxes_and_labels_on_image_array(
+ #               input_image,
+  #              np.squeeze(boxes),
+   #             np.squeeze(classes).astype(np.int32),
+    #            np.squeeze(scores),
+     #           cat_index,
+      #          use_normalized_coordinates=True,
+       #         line_thickness=8,
+        #        min_score_thresh=SCORE_TRESHOLD)
+            s.acquire()
+            self.queue.put(input_image)
+            s.release()
+           # s.release()
 
 
 # <== MAIN CODE HERE ==>
@@ -285,10 +267,22 @@ detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
 num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
 # --- Frame queue that both threads work will access. The GUI thread will read from it while the BackgroundApp thread will write to it.
-workQueue = queue.Queue(10)
+workQueue = queue.Queue(0)
 
 # --- Semaphore for allowing certain threads to access shared memory at a time.
 s = threading.Semaphore(3)
+
+camera = PiCamera()
+camera.resolution = (640, 368)
+camera.framerate = 24
+rawCapture = PiRGBArray(camera, size=(640, 368))
+time.sleep(0.1)
+print("Camera started succesfully!")
+
+#for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port=True):
+#	print("frame generated!")
+#	print(frame)
+#	rawCapture.truncate(0)
 
 # --- Setup the GUI.
 threadGUI = GUI(workQueue)
@@ -298,6 +292,7 @@ threadBackgroundApp = backgroundApp(2, workQueue)
 threadBackgroundApp.start()
 
 # -- Start the main Thread
+#time.sleep(2)
 threadGUI.run()
 
 # --- Wait for both threads to finish and join them.
