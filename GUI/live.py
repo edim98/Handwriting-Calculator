@@ -58,7 +58,7 @@ class Live:
         self.img = Image.open(os.path.abspath("ProjectImages\image.jpg")).resize((640, 190), Image.ANTIALIAS)
         self.image = ImageTk.PhotoImage(self.img)
         self.canvas.create_image(0, 0, image = self.image, anchor = "nw")
-        self.canvas.create_polygon(points, fill = "white", smooth=True)
+        self.canvas.create_polygon(points, fill = "#dddddd", smooth=True)
         self.canvas.create_text(325, 30, fill = "black", text = "This is the result:", font = ("Engravers MT", 10))
 
         self.stopEvent = threading.Event()
