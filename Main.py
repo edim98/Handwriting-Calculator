@@ -2,7 +2,7 @@ import threading
 import pdb
 from tkinter import *
 from PIL import ImageTk, Image
-# import pyttsx3
+
 sys.path.append("..")
 import datetime
 import os
@@ -10,6 +10,8 @@ import cv2
 import numpy as np
 import tensorflow as tf
 import sys
+
+import new_calculator as Calc
 
 from utils import label_map_util as lmu
 from utils import visualization_utils as vu
@@ -51,6 +53,7 @@ class GUI():
 
     # -> formula which will be displayed
     formula = ''
+    result = ''
 
     # --- Main constructor
     # -> threadID helps differentiate between threads
@@ -107,6 +110,8 @@ class GUI():
     def setExit(self, exit):
         self.exit = exit
 
+    def setResult(self, result):
+        self.result = result
     # --- Override the Thread run() method
     # Thread will display frames which are read from the shared queue. Whenever the formula is changed, it will be displayed.
     def run(self):
@@ -119,7 +124,7 @@ class GUI():
                 s.acquire()
                 frame = self.queue.get()
                 s.release()
-               #print("frame")
+
                 newImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 newImage = Image.fromarray(newImage)
                 newImage = ImageTk.PhotoImage(newImage)
@@ -134,6 +139,10 @@ class GUI():
                     print("I got a formula: " + self.formula)
                     self.canvas.itemconfigure(self.formula_container, text = self.formula)
                     self.formula = ''
+                if(self.result != ''):
+                    print("I got a result: " + self.result)
+                    self.canvas.itemconfigure(self.formula_container, text = self.result)
+                    self.result = ''
 
                 self.root.update_idletasks()
                 self.root.update()
@@ -145,13 +154,6 @@ class GUI():
 # <=~=> Class that implements the equation recognition and communication with the GPIO.
 class backgroundApp(threading.Thread):
 
-    # -> Random values for formulas.
-    #formulas = ['x^2+y^2', '1/3', '3+2']
-
-    #frames = ['./image.jpg', './dog.jpg', './Birds.jpg', './dude.jpg', './trump.jpg', './wow.jpg']
-
-    # -> Formulas queue. Testing purposes.
-    formulasQueue = queue.Queue(0)
 
     # -> Formula found by character recognition.
     formula = ''
@@ -175,9 +177,6 @@ class backgroundApp(threading.Thread):
         for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = True):
             print('frame generated!')
             input_image = frame.array
-           # s.acquire()
-            #self.queue.put(input_image)
-            #s.release()
             expanded_input_image = np.expand_dims(input_image, axis = 0)
             rawCapture.truncate(0)
             print('starting model')
@@ -220,8 +219,13 @@ class backgroundApp(threading.Thread):
                     formula += '*'
                 elif item == 14:
                     formula += '/'
+            if formula != "":
+                 formula = Calc.check_formula(formula)
+            if formula != "Error" and formula != "":
+                 threadGUI.setFormula(formula)
+                 result = Calc.formula_to_array(formula)
+                 threadGUI.setFormula(result)
 
-            threadGUI.setFormula(formula)
             image_with_box = input_image
             image_with_box.setflags(write=1)
 
@@ -234,6 +238,7 @@ class backgroundApp(threading.Thread):
                  use_normalized_coordinates=True,
                  line_thickness=8,
                  min_score_thresh=SCORE_TRESHOLD)
+
             s.acquire()
             self.queue.put(image_with_box)
             s.release()
@@ -299,10 +304,6 @@ rawCapture = PiRGBArray(camera, size=(640, 368))
 time.sleep(0.1)
 print("Camera started succesfully!")
 
-#for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port=True):
-#	print("frame generated!")
-#	print(frame)
-#	rawCapture.truncate(0)
 
 # --- Setup the GUI.
 threadGUI = GUI(workQueue)
@@ -312,7 +313,6 @@ threadBackgroundApp = backgroundApp(2, workQueue)
 threadBackgroundApp.start()
 
 # -- Start the main Thread
-#time.sleep(2)
 threadGUI.run()
 
 # --- Wait for both threads to finish and join them.
