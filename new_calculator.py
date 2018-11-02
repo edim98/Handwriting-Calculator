@@ -213,7 +213,7 @@ def send_instruction(num1, sign, num2):
 		for section in range(0, 6):
 			#check for the right header
 			while not acknowledged:
-				if section %2 == 0 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 0:
+				if section %2 == 0 and GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
 					acknowledged = True
 				elif section %2 == 1 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
 					acknowledged = True
