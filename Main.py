@@ -62,10 +62,37 @@ class GUI():
 
         self.root = Tk()
         self.root.geometry("640x480")
-        #self.image = ImageTk.PhotoImage(Image.open('./image.jpg').resize((800, 600), Image.ANTIALIAS))
         self.panel = None
-       # self.panel = Label(self.root, image = self.image)
-       # self.panel.pack(side = "bottom", fill = X)
+        self.canvas = Canvas(self.root, height = 90)
+        self.canvas.pack(side = "bottom", fill = "both", expand = "yes", padx = 5, pady = 5)
+
+        x1 = 5
+        y1 = 5
+        x2 = 805
+        y2 = 85
+        radius = 360
+        self.points = [x1 + radius, y1,
+                  x1 + radius, y1,
+                  x2 - radius, y1,
+                  x2 - radius, y1,
+                  x2, y1,
+                  x2, y1 + radius,
+                  x2, y1 + radius,
+                  x2, y2 - radius,
+                  x2, y2 - radius,
+                  x2, y2,
+                  x2 - radius, y2,
+                  x2 - radius, y2,
+                  x1 + radius, y2,
+                  x1 + radius, y2,
+                  x1, y2,
+                  x1, y2 - radius,
+                  x1, y2 - radius,
+                  x1, y1 + radius,
+                  x1, y1 + radius,
+                  x1, y1]
+        self.canvas.create_polygon(self.points, fill = "#c7621a", smooth=True, outline="black", width=1)
+        self.formula_container = self.canvas.create_text(405, 30, fill = "black", text = "Waiting for formula...")
         self.root.update_idletasks()
         self.root.update()
         print("GUI setup successfully!")
@@ -96,25 +123,20 @@ class GUI():
                 newImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 newImage = Image.fromarray(newImage)
                 newImage = ImageTk.PhotoImage(newImage)
-
                 if self.panel is None:
-                    self. panel = Label(self.root, image = newImage)
+                    self.panel = Label(self.root, image = newImage)
                     self.panel.pack(side = "bottom", fill = X)
                 else:
                     self.panel.configure(image = newImage)
                     self.panel.image = newImage
 
-                self.root.update_idletasks()
-                self.root.update()
-
                 if(self.formula != ''):
                     print("I got a formula: " + self.formula)
+                    self.canvas.itemconfigure(self.formula_container, text = self.formula)
                     self.formula = ''
-#                s.release()
 
-                #time.sleep(1)
-
-                #s.release()
+                self.root.update_idletasks()
+                self.root.update()
 
         print("GUI shutting down...")
 
@@ -151,15 +173,11 @@ class backgroundApp(threading.Thread):
         print("Starting background app...")
        # while True:
         for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = True):
-            #s.acquire()
-            #self.queue.put(frame)
-            #s.release()
-           # frame = None
-            #camera.capture(frame, 'bgr')
             print('frame generated!')
-#            print(frame.array)
-#            print('Capture %dx%d image' % (frame.array[1], frame.array[0]))
             input_image = frame.array
+           # s.acquire()
+            #self.queue.put(input_image)
+            #s.release()
             expanded_input_image = np.expand_dims(input_image, axis = 0)
             rawCapture.truncate(0)
             print('starting model')
@@ -204,18 +222,20 @@ class backgroundApp(threading.Thread):
                     formula += '/'
 
             threadGUI.setFormula(formula)
+            image_with_box = input_image
+            image_with_box.setflags(write=1)
 
-#            vu.visualize_boxes_and_labels_on_image_array(
- #               input_image,
-  #              np.squeeze(boxes),
-   #             np.squeeze(classes).astype(np.int32),
-    #            np.squeeze(scores),
-     #           cat_index,
-      #          use_normalized_coordinates=True,
-       #         line_thickness=8,
-        #        min_score_thresh=SCORE_TRESHOLD)
+            vu.visualize_boxes_and_labels_on_image_array(
+                 image_with_box,
+                 np.squeeze(boxes),
+                 np.squeeze(classes).astype(np.int32),
+                 np.squeeze(scores),
+                 cat_index,
+                 use_normalized_coordinates=True,
+                 line_thickness=8,
+                 min_score_thresh=SCORE_TRESHOLD)
             s.acquire()
-            self.queue.put(input_image)
+            self.queue.put(image_with_box)
             s.release()
            # s.release()
 

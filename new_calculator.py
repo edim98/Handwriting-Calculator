@@ -38,14 +38,14 @@ def send_instruction(num1, sign, num2):
 		num2 *= -1
 
 	#make num1 into two's commplement binary
-	two_complement_num1 = bin(num1 & int("1"*11, 2))[2:]
-	two_complement_11bit_num1 = ("{0:0>%s}" % (11)).format(two_complement_num1)
-	print(two_complement_11bit_num1)
+	two_complement_num1 = bin(num1 & int("1"*56, 2))[2:]
+	two_complement_56bit_num1 = ("{0:0>%s}" % (56)).format(two_complement_num1)
+	print(two_complement_56bit_num1)
 
 	#make num2 into two's commplement binary
-	two_complement_num2 = bin(num2 & int("1"*11, 2))[2:]
-	two_complement_11bit_num2 = ("{0:0>%s}" % (11)).format(two_complement_num2)
-	print(two_complement_11bit_num2)
+	two_complement_num2 = bin(num2 & int("1"*56, 2))[2:]
+	two_complement_56bit_num2 = ("{0:0>%s}" % (56)).format(two_complement_num2)
+	print(two_complement_56bit_num2)
 
 	#communicate with the fpga to get the calculations
 	while not finished:
@@ -112,51 +112,83 @@ def send_instruction(num1, sign, num2):
 			reset_pins_to_low()
 			break
 
-		#send num1
-		for pin in range (2, 13):
-			if two_complement_11bit_num1[pin-2] == '1':
-				GPIO.output(pin, GPIO.HIGH)
-				# print("%s%d" % ("PinH", pin))
+		#send num1 in 8 parts of 7 bits
+		for section in range(0, 9):
+			for pin in range (6, 13):
+				place = pin + section*7
+				if two_complement_56bit_num1[place-6] == '1':
+					GPIO.output(pin, GPIO.HIGH)
+					# print("%s%d" % ("PinH", pin))
+				else:
+					GPIO.output(pin, GPIO.LOW)
+					# print("%s%d" % ("PinL", pin))
+			if section %2 == 0:
+				GPIO.output(2, GPIO.LOW)
+				GPIO.output(3, GPIO.HIGH)
+				GPIO.output(4, GPIO.LOW)
+				GPIO.output(5, GPIO.LOW)
 			else:
-				GPIO.output(pin, GPIO.LOW)
-				# print("%s%d" % ("PinL", pin))
+				GPIO.output(2, GPIO.LOW)
+				GPIO.output(3, GPIO.HIGH)
+				GPIO.output(4, GPIO.LOW)
+				GPIO.output(5, GPIO.HIGH)
 
-		#wait for ack num1
-		while(not acknowledged):
-			if (GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 0):
-				acknowledged = True
-			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-				error = True
-				print("Received error")
+			#wait for ack num1
+			while(not acknowledged):
+				if section %2 == 0 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 0:
+					acknowledged = True
+				if section %2 == 1 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
+					acknowledged = True
+				elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
+					error = True
+					print("Received error")
+					break
+				elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
+					print("debug")
+				# print("waiting for ack num1")
+			acknowledged = False
+			if error or overflow:
+				reset_pins_to_low()
 				break
-			elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
-				print("debug")
-			# print("waiting for ack num1")
-		acknowledged = False
-		if error or overflow:
-			reset_pins_to_low()
-			break
 
-		#send num2
-		for pin in range (2, 13):
-			if two_complement_11bit_num2[pin-2] == '1':
-				GPIO.output(pin, GPIO.HIGH)
+		#send num2 in 8 parts of 7 bits
+		for section in range(0, 8):
+			for pin in range(6, 13):
+				place = pin + section*7
+				if two_complement_56bit_num2[place-6] == '1':
+					GPIO.output(pin, GPIO.HIGH)
+					# print("%s%d" % ("PinH", pin))
+				else:
+					GPIO.output(pin, GPIO.LOW)
+					# print("%s%d" % ("PinL", pin))
+			if section %2 == 0:
+				GPIO.output(2, GPIO.LOW)
+				GPIO.output(3, GPIO.HIGH)
+				GPIO.output(4, GPIO.LOW)
+				GPIO.output(5, GPIO.LOW)
 			else:
-				GPIO.output(pin, GPIO.LOW)
+				GPIO.output(2, GPIO.LOW)
+				GPIO.output(3, GPIO.HIGH)
+				GPIO.output(4, GPIO.LOW)
+				GPIO.output(5, GPIO.HIGH)
 
-		#wait for ack num2
-		while(not acknowledged):
-			if (GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
-				acknowledged = True
-			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-				error = True
-				print("Received error")
+			#wait for ack num2
+			while(not acknowledged):
+				if section %2 == 0 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 0:
+					acknowledged = True
+				if section %2 == 1 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
+					acknowledged = True
+				elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
+					error = True
+					print("Received error")
+					break
+				elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
+					print("debug")
+				# print("waiting for ack num2")
+			acknowledged = False
+			if error or overflow:
+				reset_pins_to_low()
 				break
-			# print("waiting for ack num2")
-		acknowledged = False
-		if error or overflow:
-			reset_pins_to_low()
-			break
 
 		#wait for solution header
 		while(not acknowledged):
@@ -176,10 +208,33 @@ def send_instruction(num1, sign, num2):
 			reset_pins_to_low()
 			break
 
-		#get the solution (15 bits long)
-		solution = [0]*12
-		for pin in range (16, 28):
-			solution[pin-16] = GPIO.input(pin)
+		#wait for the right solution header and get the solution in 5 parts of 12 bits
+		solution = [0]*60
+		for section in range(0, 6):
+			#check for the right header
+			while not acknowledged:
+				if section %2 == 0 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 0:
+					acknowledged = True
+				elif section %2 == 1 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
+					acknowledged = True
+				elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
+					error = True
+					print("Received Error")
+					break
+				elif (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
+						overflow = True
+						print("Received Overflow")
+						break;
+			# print("waiting for ack solution header")
+			acknowledged = False
+			if error or overflow:
+				reset_pins_to_low()
+				break
+
+			#get the solution in 5 parts of 12 bits
+			for pin in range(16, 28):
+				place = pin + section*12
+				solution[place-16] = GPIO.input(pin)
 
 		#reset all out pins to low
 		reset_pins_to_low()
@@ -192,7 +247,7 @@ def send_instruction(num1, sign, num2):
 		print(isinstance(solution_str, str))
 		solution_int = int(solution_str, 2)
 		if solution_str[0] == '1':
-			solution_int = solution_int - 4096
+			solution_int = solution_int - 576460752303423488
 		print(solution_int)
 
 		finished = True
