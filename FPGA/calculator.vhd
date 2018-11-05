@@ -42,7 +42,7 @@ ENTITY calculator IS
 	led8 : OUT std_logic;
 	led9 : OUT std_logic;
 	HEX01 : OUT std_logic;
-	dig0, dig1, dig2, dig3, dig4 : OUT std_logic_vector(6 DOWNTO 0);
+	dig0, dig1, dig2, dig3, dig4, dig5 : OUT std_logic_vector(6 DOWNTO 0);
     	reset: 	IN std_logic;
     	clk: 	IN std_logic -- 50MHz clokc
     );
@@ -56,11 +56,13 @@ ARCHITECTURE calculate OF calculator IS
 	SIGNAL i : INTEGER := 0;
 	SIGNAL numberoldadd: signed(59 downto 0);
 	SIGNAL numberoldmultiply: signed(115 downto 0);
+	SIGNAL numberoldmultiplytemp: signed(115 downto 0);
 	signal numbertest : std_logic_vector(115 downto 0);
-	SIGNAL numberolddivide: signed(11 downto 0);
+	signal numbertesttemp : std_logic_vector(115 downto 0);
+	SIGNAL numberolddivide: signed(59 downto 0);
 	SIGNAL numbercomplete: signed(55 downto 0);
 	signal pi_clk: std_logic;
-	SIGNAL c : INTEGER range 0 to 10000;
+	SIGNAL c : INTEGER range 0 to 20000;
 	signal count : integer := 2;
 	signal error : std_logic;
 	signal n : integer range 0 to 49;	
@@ -74,6 +76,7 @@ ARCHITECTURE calculate OF calculator IS
 	signal tens : unsigned(3 downto 0);
 	signal hundreds: unsigned(3 downto 0);
 	signal thousands: unsigned(3 downto 0);
+	signal tenthousands: unsigned(3 downto 0);
 	signal shift : integer := 0;
 	signal shifting : std_logic;
 	SIGNAL shiftresult : std_logic_vector(59 downto 0);
@@ -101,21 +104,37 @@ ARCHITECTURE calculate OF calculator IS
 			WHEN OTHERS => RETURN NOT "1110001";
 		END CASE;
 	END hex2display;
+
+	procedure multiplication(
+	numbercomplete : in signed(55 downto 0);
+	numberoldmultiply : in signed(115 downto 0);
+	SIGNAL numberoldmultiplytemp: out signed(115 downto 0)) is
+	BEGIN
+		numberoldmultiplytemp <= numberoldmultiply(59 downto 0) * signed(numbercomplete);
+	end multiplication;
+
+	procedure multiplicationtest(
+	numbercomplete : in signed(55 downto 0);
+	numbertest : in std_logic_vector(115 downto 0);
+	signal numbertesttemp : out std_logic_vector(115 downto 0)) is
+	BEGIN
+		numbertesttemp <= std_logic_vector((unsigned(numbertest(59 downto 0))) * to_unsigned(to_integer(abs(signed(numbercomplete))), numbercomplete'LENGTH));
+	end multiplicationtest;
 	
 
 BEGIN
 PROCESS (clk)
 BEGIN
 IF rising_edge(clk) THEN			--5 khz clock
-	IF c < 5000 THEN
+	IF c < 10000 THEN
 	c <= c + 1;
 	pi_clk <= '0';
-	ELSIF c = 5000 THEN
+	ELSIF c = 10000 THEN
 	pi_clk <= '1';
 	c <= c + 1;
-	ELSIF c > 5000 AND c < 10000 THEN
+	ELSIF c > 10000 AND c < 20000 THEN
 	c <= c + 1;
-	ELSIF c = 10000 THEN
+	ELSIF c = 20000 THEN
 	c <= 0;
 	pi_clk <= '0';
 	END IF;
@@ -145,27 +164,36 @@ IF reset = '0' THEN
 	numberoldmultiply(0) <= '1';
 	numbertest(115 downto 1) <=  (others => '0');
 	numbertest(0) <= '1';
+	numberoldmultiplytemp(115 downto 1) <= (others => '0');
+	numberoldmultiplytemp(0) <= '1';
+	numbertesttemp(115 downto 1) <=  (others => '0');
+	numbertesttemp(0) <= '1';
 	shifting <= '0';
 	error <= '0';
 	headerswitch <= '0';
 	n <= 0;
 	calculate <= '0';
+	negative <= '0';
 
 ELSIF rising_edge(pi_clk) THEN
 		
 	CASE state IS
 		WHEN nothing =>
 			headerback <= "000";
-			shifting <= '0';
 			numberold <= (others => '0');
 			numberoldadd <= (others => '0');
 			numberoldmultiply(115 downto 1) <= (others => '0');
 			numberoldmultiply(0) <= '1';
 			numbertest(115 downto 1) <=  (others => '0');
 			numbertest(0) <= '1';
+			numbertesttemp(115 downto 1) <=  (others => '0');
+			numbertesttemp(0) <= '1';
+			numberoldmultiplytemp(115 downto 1) <= (others => '0');
+			numberoldmultiplytemp(0) <= '1';
 			i <= 0;
 			IF header = "0001" THEN
 				state := beginnow;
+				shifting <= '0';
 				headerback <= "010";
 			ELSIF header = "1111" THEN
 				state := nothing;
@@ -245,6 +273,8 @@ ELSIF rising_edge(pi_clk) THEN
 				i <= 0;			
 			END IF;
 		WHEN multiply =>
+			numberoldmultiply <= numberoldmultiplytemp;
+			numbertest <= numbertesttemp;
 			IF headerswitch = '0' AND i /= count AND calculate = '0' THEN
 				IF n < 49 AND header = "0100" THEN	
 					numbercomplete((55-n) downto (49-n)) <= number;
@@ -288,46 +318,81 @@ ELSIF rising_edge(pi_clk) THEN
 				END IF;
 			END IF;
 
-			IF i < count AND numbertest(115 downto 55) = "0000000000000000000000000000000000000000000000000000000000000" AND calculate = '1' THEN
-				numberoldmultiply <= numberoldmultiply(59 downto 0) * signed(numbercomplete);
-				numbertest <= std_logic_vector((unsigned(numbertest(59 downto 0))) * to_unsigned(to_integer(abs(signed(numbercomplete))), numbercomplete'LENGTH));
+			IF i < count AND numbertesttemp(115 downto 55) = "0000000000000000000000000000000000000000000000000000000000000" AND calculate = '1' THEN
+				multiplication(numbercomplete, numberoldmultiply, numberoldmultiplytemp);
+				multiplicationtest(numbercomplete, numbertest, numbertesttemp);
 				i <= i + 1;
 				calculate <= '0';
 					
-			ELSIF i = count AND numbertest(115 downto 55) = "0000000000000000000000000000000000000000000000000000000000000" THEN
-				numberold <= numberoldmultiply(59 downto 0);
+			ELSIF i = count AND numbertesttemp(115 downto 55) = "0000000000000000000000000000000000000000000000000000000000000" THEN
+				numberold <= numberoldmultiplytemp(59 downto 0);
 				i <= 0;
 				state := ready;
-			ELSIF numbertest(115 downto 55) /= "0000000000000000000000000000000000000000000000000000000000000" THEN
+			ELSIF numbertesttemp(115 downto 55) /= "0000000000000000000000000000000000000000000000000000000000000" THEN
 				state := nothing;
 				headerback <= "011";
+				numberoldmultiplytemp(115 downto 1) <= (others => '0');
+				numberoldmultiplytemp(0) <= '1';
 				numberoldmultiply(115 downto 1) <= (others => '0');
 				numberoldmultiply(0) <= '1';
+				numbertesttemp(115 downto 1) <=  (others => '0');
+				numbertesttemp(0) <= '1';
 				numbertest(115 downto 1) <=  (others => '0');
 				numbertest(0) <= '1';
 				error <= '1';
 			END IF;
 		WHEN divide =>
-			IF i < count THEN
+			IF headerswitch = '0' AND i /= count AND calculate = '0' THEN
+				IF n < 49 AND header = "0100" THEN	
+					numbercomplete((55-n) downto (49-n)) <= number;
+					n <= n + 7;
+					headerswitch <= '1';
+					IF headerback = "100" THEN
+						headerback <= "101";	
+					ELSIF headerback = "101" THEN
+						headerback <= "100";
+					ELSE
+						headerback <= "100";
+					END IF;
+				ELSE 
+					calculate <= '0';
+					headerback <= "111";
+					error <= '1';
+					state := nothing;
+				END IF;
+			ELSIF headerswitch = '1' AND i /= count AND calculate = '0' THEN
+				headerswitch <= '0';
+				IF n < 49 AND header = "0101" THEN
+					numbercomplete((55-n) downto (49-n)) <= number;
+					n <= n + 7;
+					IF headerback = "100" THEN
+						headerback <= "101";	
+					ELSIF headerback = "101" THEN
+						headerback <= "100";
+					ELSE
+						headerback <= "100";
+					END IF;
+				ELSIF n = 49 and header = "0101" THEN
+					numbercomplete(6 downto 0) <= number;
+					n <= 0;
+					calculate <= '1';
+					headerback <= "101";
+				ELSE
+					calculate <= '0';
+					headerback <= "111";
+					error <= '1';
+					state := nothing;	
+				END IF;
+			END IF;
+			IF i < count AND calculate = '1' THEN
 			numberolddivide <= numberolddivide / resize(signed(number),11);
 			i <= i + 1;
-				IF headerback = "100" THEN
-					headerback <= "101";	
-				ELSIF headerback = "101" THEN
-					headerback <= "100";
-				ELSE
-					headerback <= "100";
-				END IF;		
 			ELSIF i = count THEN
 				state := ready;
-			ELSE
-				headerback <= "111";
-				error <= '1';
-				state := nothing;
+				numberold <= numberolddivide(59 downto 0);
+				i <= 0;
 			END IF;
 		WHEN ready =>
-			shifting <= '1';
-			postivenumber <= std_logic_vector(to_unsigned(to_integer(abs(signed(numberold))),numberold'LENGTH));
 			IF r < 48 THEN
 				IF headerback = "101" THEN
 					headerback <= "001";	
@@ -339,11 +404,17 @@ ELSIF rising_edge(pi_clk) THEN
 			 	r <= r + 12;
 				result <= std_logic_vector(numberold((59-r) downto (48-r)));
 			ELSIF r = 48 THEN
+				IF numberold(59) = '0' THEN
+					negative <= '0';
+				ELSIF numberold(59) = '1' THEN
+					negative <= '1';
+				END IF;
 				headerback <= "001";
 				r <= 0;
 				result <= std_logic_vector(numberold(11 downto 0));
 				state := nothing;
 				shifting <= '1';
+				postivenumber <= std_logic_vector(to_unsigned(to_integer(abs(signed(numberold))),numberold'LENGTH));
 			END IF;
 		WHEN OTHERS => 
 			state:= nothing;
@@ -354,17 +425,25 @@ ELSIF rising_edge(pi_clk) THEN
 END IF;
 END PROCESS;
 PROCESS(clk)
-
 BEGIN
 IF reset = '0' THEN
-		dig4 <= NOT "0000000";
+		dig5 <= NOT "0000000";
+		dig4 <= NOT "0111111";
 		dig3 <= NOT "0111111";
 		dig2 <= NOT "0111111";
 		dig1 <= NOT "0111111";
 		dig0 <= NOT "0111111";
+		shift <= 0;
+		ones <= "0000";
+		tens <= "0000";
+		hundreds <= "0000";
+		thousands <= "0000";
+		tenthousands <= "0000";
+		shiftresult(59 downto 0) <= (others => '0');
+		
 ELSIF rising_edge(clk) THEN
 		--Binary to BCD conversion
-
+	IF unsigned(postivenumber) < 100000 AND error /= '1' THEN
 		IF shift = 0 and shifting = '1' THEN	
 			shiftresult(59 downto 0) <= std_logic_vector(shift_left(unsigned(postivenumber), 1));
 			ones(0) <= postivenumber(11);
@@ -372,22 +451,19 @@ ELSIF rising_edge(clk) THEN
 			tens <= "0000";
 			hundreds <= "0000";
 			thousands <= "0000";
+			tenthousands <= "0000";
 			shift <= 1;
-			IF result(11) = '0' THEN
-				negative <= '0';
-			ELSIF result(11) = '1' THEN
-				negative <= '1';
-			END IF;
+	
 		ELSIF shift /= 0 and shift < 60 and shifting = '1' THEN
 			-- Ones
 			shiftresult(59 downto 0) <= std_logic_vector(shift_left(unsigned(shiftresult),1));
-			IF shiftresult(11) = '1' AND ones >= 5 THEN
+			IF shiftresult(59) = '1' AND ones >= 5 THEN
 				ones <= "0001" + shift_left(ones + 3, 1);
-			ELSIF shiftresult(11) = '1' AND ones < 5 THEN
+			ELSIF shiftresult(59) = '1' AND ones < 5 THEN
 				ones <= "0001" + shift_left(ones, 1);
-			ELSIF shiftresult(11) = '0' AND ones >= 5 THEN
+			ELSIF shiftresult(59) = '0' AND ones >= 5 THEN
 				ones <= shift_left(ones + 3, 1);
-			ELSIF shiftresult(11) = '0' AND ones < 5 THEN
+			ELSIF shiftresult(59) = '0' AND ones < 5 THEN
 				ones <= shift_left(ones, 1);
 			END IF;
 			-- Tens
@@ -420,30 +496,51 @@ ELSIF rising_edge(clk) THEN
 			ELSIF hundreds(3) = '0' AND hundreds < 5 AND thousands < 5 THEN
 				thousands <= shift_left(thousands, 1);
 			END IF;
+			--Tenthousands
+			IF (thousands(3) = '1' or thousands >= 5) AND tenthousands >= 5 THEN					
+				tenthousands <= "0001" + shift_left(tenthousands + 3, 1);
+			ELSIF (thousands(3) = '1' or thousands >= 5) AND tenthousands < 5 THEN
+				tenthousands <= "0001" + shift_left(tenthousands, 1);
+			ELSIF thousands(3) = '0' AND thousands < 5 AND tenthousands >= 5 THEN
+				tenthousands <= shift_left(tenthousands + 3, 1);
+			ELSIF thousands(3) = '0' AND thousands < 5 AND tenthousands < 5 THEN
+				tenthousands <= shift_left(tenthousands, 1);
+			END IF;
 			shift <= shift + 1;
-		END if;
+		END IF;	
 
-		IF shift = 12 and shifting = '1' THEN
+		IF shift = 60 and shifting = '1' THEN
+			dig4 <= hex2display(std_logic_vector(tenthousands));
 			dig3 <= hex2display(std_logic_vector(thousands));
 			dig2 <= hex2display(std_logic_vector(hundreds));
 			dig1 <= hex2display(std_logic_vector(tens));
 			dig0 <= hex2display(std_logic_vector(ones));
 			IF negative = '1' THEN
-			dig4 <= NOT "1000000";
+			dig5 <= NOT "1000000";
 			ELSIF negative = '0' THEN
-			dig4 <= NOT "0000000";
+			dig5 <= NOT "0000000";
 			END IF;
-		shift <= 0;
+			shift <= 0;
 		END IF;
 
-		IF error = '1' THEN
-			dig0 <= NOT "1010000";
-			dig1 <= NOT "1011100";
-			dig2 <= NOT "1010000";
-			dig3 <= NOT "1010000";
-			dig4 <= NOT "1111001";
-		END IF;
-			
+	ELSE IF unsigned(postivenumber) > 100000 AND error /= '1' AND shifting = '1' THEN
+		dig0 <= NOT "1110110";
+		dig1 <= NOT "0111101";
+		dig2 <= NOT "0111110";
+		dig3 <= NOT "0111111";
+		dig4 <= NOT "0110111";
+		dig5 <= NOT "1111001";
+	END IF;
+	
+	IF error = '1' THEN
+		dig0 <= NOT "1010000";
+		dig1 <= NOT "1011100";
+		dig2 <= NOT "1010000";
+		dig3 <= NOT "1010000";
+		dig4 <= NOT "1111001";
+		dig5 <= NOT "0000000";
+	END IF;	
+END IF;
 END IF;
 END PROCESS;
 END calculate;
