@@ -64,16 +64,17 @@ class GUI():
 		self.exit = 0
 
 		self.root = Tk()
-		self.root.geometry("640x480")
+		self.root.geometry("640x600")
+		self.root.resizable(width = False, height = False)
 		self.panel = None
-		self.canvas = Canvas(self.root, height = 90)
-		self.canvas.pack(side = "bottom", fill = "both", expand = "yes", padx = 5, pady = 5)
+		self.canvas = Canvas(self.root, height = 190)
+		self.canvas.pack(side = "bottom", fill = "both", expand = "yes")
 
-		x1 = 5
-		y1 = 5
-		x2 = 805
-		y2 = 85
-		radius = 360
+		x1 = 120
+		y1 = 50
+		x2 = 520
+		y2 = 140
+		radius = 25
 		self.points = [x1 + radius, y1,
 				  x1 + radius, y1,
 				  x2 - radius, y1,
@@ -94,8 +95,12 @@ class GUI():
 				  x1, y1 + radius,
 				  x1, y1 + radius,
 				  x1, y1]
-		self.canvas.create_polygon(self.points, fill = "#c7621a", smooth=True, outline="black", width=1)
-		self.formula_container = self.canvas.create_text(405, 30, fill = "black", text = "Waiting for formula...")
+		self.img = Image.open(os.path.abspath("./ProjectImages/image.jpg")).resize((640, 190), Image.ANTIALIAS)
+		self.image = ImageTk.PhotoImage(self.img)
+		self.canvas.create_image(0, 0, image = self.image, anchor = "nw")
+		self.canvas.create_polygon(self.points, fill = "#dddddd", smooth=True)
+		self.formula_container = self.canvas.create_text(320, 30, fill = "black", text = "Waiting for formula...")
+		self.result_container = self.canvas.create_text(320, 95, fill = "black", text = "This is the result", font = 25)
 		self.root.update_idletasks()
 		self.root.update()
 		print("GUI setup successfully!")
