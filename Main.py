@@ -186,7 +186,7 @@ class GUI():
                     self.canvas.itemconfigure(self.result_container, text=self.result)
                     self.result = ''
 
-                if self.image2_array is not None:
+                if self.image2_array != None:
                     np_array = np.array(self.image2_array)
                     resized = cv2.resize(np_array, None, fx = 0.45, fy = 0.4, interpolation = cv2.INTER_CUBIC)
                     boxImage = Image.fromarray(resized)
@@ -278,7 +278,7 @@ class backgroundApp(threading.Thread):
                     formula += '('
                 elif item == 16:
                     formula += ')'
-            if formula is not "":
+            if formula != "":
                 if Calc.check_formula_correct(formula):
                     threadGUI.setFormula(formula)
                     result = Calc.formula_to_array(formula)
