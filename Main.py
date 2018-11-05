@@ -39,7 +39,7 @@ LABELMAP_FOLDERNAME = 'training'
 LABELMAP_FILENAME = 'labelmap.pbtxt'
 
 # The number of classes the model can detect
-NUMBER_OF_CLASSES = 14
+NUMBER_OF_CLASSES = 16
 
 # The certainty treshold for a classified object to show (0.0-1.0)
 SCORE_TRESHOLD = 0.75
