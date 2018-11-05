@@ -18,6 +18,12 @@ def send_instruction(num1, sign, num2):
 	overflow = False
 	solution_int = 0
 
+	# Check if each input num is an int (and not an error), if not, return the error
+	if isinstance(num1, int):
+		return num1
+	elif isinstance(num2, int):
+		return num2
+
 	# Set pins as in and output
 	GPIO.setmode(GPIO.BCM)
 	for pin in range(2, 13):
@@ -65,13 +71,10 @@ def send_instruction(num1, sign, num2):
 			if (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 0):
 				acknowledged = True
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-				error = True
+				reset_pins_to_low()
 				print("Received error")
-				break
+				return "Received Error"
 		acknowledged = False
-		if error or overflow:
-			reset_pins_to_low()
-			break
 
 		#send operation type:
 		# GPIO.output(11, GPIO.HIGH)
@@ -105,14 +108,11 @@ def send_instruction(num1, sign, num2):
 			if (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				acknowledged = True
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-				error = True
+				reset_pins_to_low()
 				print("Received error")
-				break
+				return "Received Error"
 			# print("waiting for ack operation type")
 		acknowledged = False
-		if error or overflow:
-			reset_pins_to_low()
-			break
 
 		#send num1 in 8 parts of 7 bits
 		for section in range(0, 8):
@@ -142,16 +142,15 @@ def send_instruction(num1, sign, num2):
 				if section %2 == 1 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
 					acknowledged = True
 				elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-					error = True
+					reset_pins_to_low()
 					print("Received error")
-					break
+					return "Received Error"
 				elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
+					reset_pins_to_low()
 					print("debug")
+					return "Debug"
 				# print("waiting for ack num1")
 			acknowledged = False
-			if error or overflow:
-				reset_pins_to_low()
-				break
 
 		#send num2 in 8 parts of 7 bits
 		for section in range(0, 8):
@@ -181,34 +180,30 @@ def send_instruction(num1, sign, num2):
 				if section %2 == 1 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
 					acknowledged = True
 				elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-					error = True
+					reset_pins_to_low()
 					print("Received error")
-					break
+					return "Received Error"
 				elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
+					reset_pins_to_low()
 					print("debug")
+					return "Debug"
 				# print("waiting for ack num2")
 			acknowledged = False
-			if error or overflow:
-				reset_pins_to_low()
-				break
 
 		#wait for solution header
 		while(not acknowledged):
 			if (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
 				acknowledged = True
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-				error = True
+				reset_pins_to_low()
 				print("Received Error")
-				break
+				return "Received Error"
 			elif (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-					overflow = True
-					print("Received Overflow")
-					break;
+				reset_pins_to_low()
+				print("Received Overflow")
+				return "Received Overflow"
 			# print("waiting for ack solution header")
 		acknowledged = False
-		if error or overflow:
-			reset_pins_to_low()
-			break
 
 		#wait for the right solution header and get the solution in 5 parts of 12 bits
 		solution = [0]*60
@@ -220,18 +215,15 @@ def send_instruction(num1, sign, num2):
 				elif section %2 == 1 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
 					acknowledged = True
 				elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-					error = True
+					reset_pins_to_low()
 					print("Received Error")
-					break
+					return "Received Error"
 				elif (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-						overflow = True
-						print("Received Overflow")
-						break;
+					reset_pins_to_low()
+					print("Received Overflow")
+					return "Received Overflow"
 			# print("waiting for ack solution header")
 			acknowledged = False
-			if error or overflow:
-				reset_pins_to_low()
-				break
 
 			#get the solution in 5 parts of 12 bits
 			for pin in range(16, 28):
