@@ -42,7 +42,7 @@ LABELMAP_FILENAME = 'labelmap.pbtxt'
 NUMBER_OF_CLASSES = 14
 
 # The certainty treshold for a classified object to show (0.0-1.0)
-SCORE_TRESHOLD = 0.5
+SCORE_TRESHOLD = 0.75
 
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #--------------- Only change variables above this line! -----------------
