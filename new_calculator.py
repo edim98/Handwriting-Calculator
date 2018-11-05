@@ -4,6 +4,8 @@ import RPi.GPIO as GPIO
 SIGNS_1 = ('*', '/')
 SIGNS_2 = ('+', '-')
 SIGNS_3 = ('(', ')')
+NON_DOUBLES = ('+', '*', '/')
+SYMBOLS = ('+', , '-', '*', '/')
 
 def reset_pins_to_low():
 	for pin in range(2, 13):
@@ -25,13 +27,12 @@ def send_instruction(num1, sign, num2):
 		GPIO.setup(pin, GPIO.IN)
 
 	#check for overflow before sending
-	if num1 > 2**55-1 or num2 > 2**55-1 or num1 < -2**55 or num2 < -2**55:
+	if num1 > 1023 or num2 > 1023 or num1 < -1024 or num2 < -1024:
 		# Send Error
 		GPIO.output(2, GPIO.HIGH)
 		GPIO.output(3, GPIO.HIGH)
 		GPIO.output(4, GPIO.HIGH)
 		GPIO.output(5, GPIO.HIGH)
-		print("Input number too high")
 		return "Input number too high"
 
 	#make sbutract calculations into add calculations
@@ -65,7 +66,7 @@ def send_instruction(num1, sign, num2):
 				acknowledged = True
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
-				print("Received error waiting for ack start calc")
+				print("Received error")
 				break
 		acknowledged = False
 		if error or overflow:
@@ -105,7 +106,7 @@ def send_instruction(num1, sign, num2):
 				acknowledged = True
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				error = True
-				print("Received error for ack operation type")
+				print("Received error")
 				break
 			# print("waiting for ack operation type")
 		acknowledged = False
@@ -114,7 +115,7 @@ def send_instruction(num1, sign, num2):
 			break
 
 		#send num1 in 8 parts of 7 bits
-		for section in range(0, 8):
+		for section in range(0, 9):
 			for pin in range (6, 13):
 				place = pin + section*7
 				if two_complement_56bit_num1[place-6] == '1':
@@ -142,11 +143,10 @@ def send_instruction(num1, sign, num2):
 					acknowledged = True
 				elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 					error = True
-					print(section)
-					print("Received error for ack num1")
+					print("Received error")
 					break
-				#elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
-					#print("debug ack num1")
+				elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
+					print("debug")
 				# print("waiting for ack num1")
 			acknowledged = False
 			if error or overflow:
@@ -182,20 +182,37 @@ def send_instruction(num1, sign, num2):
 					acknowledged = True
 				elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 					error = True
-					print("Received error for ack num 2")
+					print("Received error")
 					break
-				#elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
-					#print("debug ack num2")
+				elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
+					print("debug")
 				# print("waiting for ack num2")
 			acknowledged = False
 			if error or overflow:
 				reset_pins_to_low()
 				break
 
+		#wait for solution header
+		while(not acknowledged):
+			if (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
+				acknowledged = True
+			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
+				error = True
+				print("Received Error")
+				break
+			elif (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
+					overflow = True
+					print("Received Overflow")
+					break;
+			# print("waiting for ack solution header")
+		acknowledged = False
+		if error or overflow:
+			reset_pins_to_low()
+			break
 
 		#wait for the right solution header and get the solution in 5 parts of 12 bits
 		solution = [0]*60
-		for section in range(0, 5):
+		for section in range(0, 6):
 			#check for the right header
 			while not acknowledged:
 				if section %2 == 0 and GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
@@ -204,8 +221,7 @@ def send_instruction(num1, sign, num2):
 					acknowledged = True
 				elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 					error = True
-					print(section)
-					print("Received Error for checking the right solution header")
+					print("Received Error")
 					break
 				elif (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 						overflow = True
@@ -304,31 +320,48 @@ def formula_to_array(formula):
 # def get_formula_answer(formula):
 # 	return get_calcs(get_calcs(formula_to_array(formula), SIGNS_1), SIGNS_2)[0]
 
-# Checks if the formula is correct, if not it will return a correct string if the formula is correct or it can be corrected, or "Error" if the formula cannot be corrected
-def check_formula(formula):
-	new_formula = ""
-	if formula[0] in SIGNS_1:
-		return "Error"
-	elif formula[len(formula)-1] in SIGNS_1 or formula[len(formula)-1] in SIGNS_2:
-		return "Error"
-	if formula[0] == '+':
-		new_formula = formula[1:]
-	else:
-		new_formula = formula
-	for char_pos in range(0, len(new_formula)):
-		if new_formula[char_pos] in (SIGNS_1 or SIGNS_2):
-			if new_formula[char_pos - 1] in (SIGNS_1 or SIGNS_2):
-				return "Error"
-	return new_formula
+# Checks if a formula is correct or not
+# Returns True if correct, False if incorrect
+def check_formula_correct:
+	openbracket = 0
+	closebracket = 0
+
+	#check everything in this loop for every character in the formula
+	for index, character in enumerate(formula):
+		if index == 0 or index == len(formula)-1:
+			#check if the character at index 0 is not a symbol other than minus
+			if index == 0 and character in NON_DOUBLES:
+				return False
+			#check if the character at the last index is not a symbol
+			elif index = len(formula)-1 and character in SYMBOLS:
+				return False
+
+		if character in SYMBOLS:
+			#check if the next character after a symbol is not a symbol other than minus
+			if formula[index+1] in NON_DOUBLES:
+				return False
+			#check if the next character after a minus after a symbol is not a symbol too
+			else if formula[index+1] == '-' and formula[index+2] in SYMBOLS:
+				return False
+			#check for a open or closing bracket and count them
+			elif character == '(':
+				openbracket += 1
+			elif character == ')':
+				closebracket += 1
+				#check if the number of closing brackets after finding a closing bracket
+				#exceeds the number of opening brackets
+				if closebracket > openbracket:
+					return False
+	#if formula is not deemed incorrect in the above loop, return True
+	return True
 
 # In and output. Should be retrieved form the 
 # formula
-#formula = str(input("Enter the operation you want to perform: "))
+formula = str(input("Enter the operation you want to perform: "))
 # formula = "-5*-3--7+666/6"
-#formula = check_formula(formula)
-#fin_answer = 0
-#if formula != "Error":
+fin_answer = 0
+if formula != "Error":
 	# print(get_formula_answer(formula))
-#	print(formula_to_array(formula))
-#else:
-#	print("Error")
+	print(formula_to_array(formula))
+else:
+	print("Error")
