@@ -148,7 +148,7 @@ for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_por
 		elif item == 13:
 			formula += '*'
 		elif item == 14:
-			formula += '/
+			formula += '/'
 		elif item == 15:
 			formula += '('
 		elif item == 16:
