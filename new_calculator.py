@@ -357,11 +357,11 @@ def check_formula_correct(formula):
 
 # In and output. Should be retrieved form the 
 # formula
-formula = str(input("Enter the operation you want to perform: "))
+#formula = str(input("Enter the operation you want to perform: "))
 # formula = "-5*-3--7+666/6"
-fin_answer = 0
-if formula != "Error":
+#fin_answer = 0
+#if formula != "Error":
 	# print(get_formula_answer(formula))
-	print(formula_to_array(formula))
-else:
-	print("Error")
+#	print(formula_to_array(formula))
+#else:
+#	print("Error")
