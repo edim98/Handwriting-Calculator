@@ -149,13 +149,10 @@ for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_por
 			formula += '*'
 		elif item == 14:
 			formula += '/'
-
-	# To be replaced and calculated by FPGA
-	# answer = int(eval(formula))
-
-	# print("The formula in the image is: %s" % (formula))
-	# print("The answer to that formula is: %d" % (answer))
-	# print("%s = %d" % (formula, answer))
+		elif item == 15:
+			formula += '('
+		elif item == 16:
+			formula += ')'
 
 	# Make the labels on the image
 	vu.visualize_boxes_and_labels_on_image_array(
@@ -167,5 +164,3 @@ for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_por
 		use_normalized_coordinates=True,
 		line_thickness=8,
 		min_score_thresh=SCORE_TRESHOLD)
-
-	# cv2.imshow('Object detector', input_image)
