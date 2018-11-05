@@ -134,7 +134,8 @@ class GUI():
 		self.result = result
 
 	def setImageWithBoxes(self, newImage):
-		self.canvas.itemconfigure(self.image_container, image = newImage)
+		#self.canvas.itemconfigure(self.image_container, image = newImage)
+                self.image2 = newImage
 
 	# --- Override the Thread run() method
 	# Thread will display frames which are read from the shared queue. Whenever the formula is changed, it will be displayed.
@@ -183,6 +184,7 @@ class GUI():
 					self.canvas.itemconfigure(self.result_container, text = self.result)
 					self.result = ''
 
+                                self.canvas.itemconfigre(self.image_container, image = self.image2)
 				# Update the GUI
 				self.root.update_idletasks()
 				self.root.update()
