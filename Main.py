@@ -190,7 +190,6 @@ class GUI():
                     np_array = np.array(self.image2_array)
                     resized = cv2.resize(np_array, None, fx = 0.45, fy = 0.4, interpolation = cv2.INTER_CUBIC)
                     boxImage = Image.fromarray(resized)
-                   # resized = cv2.resize(boxImage, None, fx = 0.125, fy = 0.125, interpolation = cv2.INTER_CUBIC)
                     boxImage = ImageTk.PhotoImage(boxImage)
                     self.canvas.itemconfigure(self.image_container, image=boxImage)
                     self.image2_array = None
@@ -286,6 +285,8 @@ class backgroundApp(threading.Thread):
                     threadGUI.setFormula(str(result))
                 else:
                     threadGUI.setFormula("Incorrect Formula, waiting for new formula")
+            else:
+                threadGUI.setFormula("Waiting for formula")
 
             image_with_box = frame.array
             image_with_box.setflags(write=1)
