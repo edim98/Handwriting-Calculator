@@ -108,13 +108,16 @@ class GUI():
         self.canvas.create_polygon(self.points, fill="#dddddd", smooth=True)
         self.formula_container = self.canvas.create_text(320, 30, fill="black", text="Waiting for formula...")
         self.result_container = self.canvas.create_text(320, 95, fill="black", text="This is the result", font=25)
+
         self.img2 = Image.open(os.path.abspath("./ProjectImages/image.jpg")).resize((300, 110), Image.ANTIALIAS)
         self.image2 = ImageTk.PhotoImage(self.img2)
         self.image_container = self.canvas.create_image(170, 140, image=self.image2, anchor="nw")
+        self.image2_array = None
 
         # Update the GUI
         self.root.update_idletasks()
         self.root.update()
+
         print("GUI setup successfully!")
 
     # --- Basic setter
@@ -134,7 +137,7 @@ class GUI():
 
     def setImageWithBoxes(self, newImage):
         # self.canvas.itemconfigure(self.image_container, image = newImage)
-        self.image2 = newImage
+        self.image2_array = newImage
 
     # --- Override the Thread run() method
     # Thread will display frames which are read from the shared queue. Whenever the formula is changed, it will be displayed.
@@ -183,7 +186,10 @@ class GUI():
                     self.canvas.itemconfigure(self.result_container, text=self.result)
                     self.result = ''
 
-                self.canvas.itemconfigre(self.image_container, image=self.image2)
+                if self.image2_array is not None:
+                    boxImage = Image.fromarray(self.image2_array)
+                    boxImage = ImageTk.PhotoImage(boxImage)
+                    self.canvas.itemconfigure(self.image_container, image=boxImage)
                 # Update the GUI
                 self.root.update_idletasks()
                 self.root.update()
