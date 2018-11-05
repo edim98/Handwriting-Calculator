@@ -5,7 +5,7 @@ SIGNS_1 = ('*', '/')
 SIGNS_2 = ('+', '-')
 SIGNS_3 = ('(', ')')
 NON_DOUBLES = ('+', '*', '/')
-SYMBOLS = ('+',  '-', '*', '/')
+SYMBOLS = ('+', '-', '*', '/')
 
 def reset_pins_to_low():
 	for pin in range(2, 13):
