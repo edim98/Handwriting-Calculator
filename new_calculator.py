@@ -322,7 +322,7 @@ def formula_to_array(formula):
 
 # Checks if a formula is correct or not
 # Returns True if correct, False if incorrect
-def check_formula_correct:
+def check_formula_correct(formula):
 	openbracket = 0
 	closebracket = 0
 
