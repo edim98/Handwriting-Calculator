@@ -14,8 +14,6 @@ def reset_pins_to_low():
 def send_instruction(num1, sign, num2):
 	acknowledged = False
 	finished = False
-	error = False
-	overflow = False
 	solution_int = 0
 
 	# Check if each input num is an int (and not an error), if not, return the error
