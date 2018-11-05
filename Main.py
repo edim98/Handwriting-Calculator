@@ -39,10 +39,10 @@ LABELMAP_FOLDERNAME = 'training'
 LABELMAP_FILENAME = 'labelmap.pbtxt'
 
 # The number of classes the model can detect
-NUMBER_OF_CLASSES = 14
+NUMBER_OF_CLASSES = 16
 
 # The certainty treshold for a classified object to show (0.0-1.0)
-SCORE_TRESHOLD = 0.5
+SCORE_TRESHOLD = 0.75
 
 #^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #--------------- Only change variables above this line! -----------------
@@ -128,10 +128,12 @@ class GUI():
 				self.queue.put(frame)
 				s.release()
 
+
 				newImage = cv2.cvtColor(frame.array, cv2.COLOR_BGR2RGB)
 				newImage = Image.fromarray(newImage)
 				newImage = ImageTk.PhotoImage(newImage)
 				rawCapture.truncate(0)
+
 				if self.panel is None:
 					self.panel = Label(self.root, image = newImage)
 					self.panel.pack(side = "bottom", fill = X)
@@ -236,11 +238,12 @@ class backgroundApp(threading.Thread):
 				if Calc.check_formula_correct(formula):
 					 threadGUI.setFormula(formula)
 					 result = Calc.formula_to_array(formula)
-					 threadGUI.setFormula(result)
+					 threadGUI.setFormula(str(result))
 				else:
 					threadGUI.setFormula("Incorrect Formula, waiting for new formula")
 
-			image_with_box = input_image
+
+			image_with_box = frame.array
 			image_with_box.setflags(write=1)
 
 			vu.visualize_boxes_and_labels_on_image_array(
@@ -252,7 +255,6 @@ class backgroundApp(threading.Thread):
 				 use_normalized_coordinates=True,
 				 line_thickness=8,
 				 min_score_thresh=SCORE_TRESHOLD)
-
 			#s.acquire()
 			#self.queue.put(image_with_box)
 			#s.release()
