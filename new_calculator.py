@@ -5,7 +5,7 @@ SIGNS_1 = ('*', '/')
 SIGNS_2 = ('+', '-')
 SIGNS_3 = ('(', ')')
 NON_DOUBLES = ('+', '*', '/')
-SYMBOLS = ('+', , '-', '*', '/')
+SYMBOLS = ('+', '-', '*', '/')
 
 def reset_pins_to_low():
 	for pin in range(2, 13):
@@ -322,7 +322,7 @@ def formula_to_array(formula):
 
 # Checks if a formula is correct or not
 # Returns True if correct, False if incorrect
-def check_formula_correct:
+def check_formula_correct(formula):
 	openbracket = 0
 	closebracket = 0
 
@@ -333,7 +333,7 @@ def check_formula_correct:
 			if index == 0 and character in NON_DOUBLES:
 				return False
 			#check if the character at the last index is not a symbol
-			elif index = len(formula)-1 and character in SYMBOLS:
+			elif index == len(formula)-1 and character in SYMBOLS:
 				return False
 
 		if character in SYMBOLS:
