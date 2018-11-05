@@ -188,11 +188,12 @@ class GUI():
 
                 if self.image2_array is not None:
                     np_array = np.array(self.image2_array)
-                    resized = cv2.resize(np_array, None, fx = 0.125, fy = 0.125, interpolation = cv2.INTER_CUBIC)
+                    resized = cv2.resize(np_array, None, fx = 0.45, fy = 0.4, interpolation = cv2.INTER_CUBIC)
                     boxImage = Image.fromarray(resized)
                    # resized = cv2.resize(boxImage, None, fx = 0.125, fy = 0.125, interpolation = cv2.INTER_CUBIC)
                     boxImage = ImageTk.PhotoImage(boxImage)
                     self.canvas.itemconfigure(self.image_container, image=boxImage)
+                    self.image2_array = None
                 # Update the GUI
                 self.root.update_idletasks()
                 self.root.update()
