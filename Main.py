@@ -189,7 +189,7 @@ class GUI():
                 if self.image2_array is not None:
                     boxImage = Image.fromarray(self.image2_array)
                     boxImage = ImageTk.PhotoImage(boxImage)
-                    self.canvas.itemconfigure(self.image_container, image=boxImage)
+                    self.canvas.itemconfigure(self.image_container, image=boxImage.resize(300, 110))
                 # Update the GUI
                 self.root.update_idletasks()
                 self.root.update()
