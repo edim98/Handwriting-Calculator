@@ -446,7 +446,7 @@ ELSIF rising_edge(clk) THEN
 	IF unsigned(postivenumber) < 100000 AND error /= '1' THEN
 		IF shift = 0 and shifting = '1' THEN	
 			shiftresult(59 downto 0) <= std_logic_vector(shift_left(unsigned(postivenumber), 1));
-			ones(0) <= postivenumber(11);
+			ones(0) <= postivenumber(59);
 			ones(3 downto 1) <= "000";
 			tens <= "0000";
 			hundreds <= "0000";
