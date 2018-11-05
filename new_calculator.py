@@ -249,7 +249,7 @@ def send_instruction(num1, sign, num2):
 		print(isinstance(solution_str, str))
 		solution_int = int(solution_str, 2)
 		if solution_str[0] == '1':
-			solution_int = solution_int - 576460752303423488
+			solution_int = solution_int - 2**60
 		print(solution_int)
 
 		finished = True
