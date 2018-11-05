@@ -281,7 +281,11 @@ class backgroundApp(threading.Thread):
             if formula != "":
                 if Calc.check_formula_correct(formula):
                     threadGUI.setFormula(formula)
-                    result = Calc.formula_to_array(formula)
+                    try:
+                        result = Calc.formula_to_array(formula)
+                    except:
+                        Calc.reset_pins_to_low()
+                        result = "Exception: Calculation Error"
                     threadGUI.setResult(str(result))
                 else:
                     threadGUI.setFormula("Incorrect Formula, waiting for new formula")
