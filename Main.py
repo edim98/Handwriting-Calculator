@@ -288,13 +288,12 @@ class backgroundApp(threading.Thread):
             else:
                 threadGUI.setFormula("Waiting for formula")
 
-            image_with_box = frame.array
-            image_with_box.setflags(write=1)
+            input_image.setflags(write=1)
             #resized = cv2.resize(frame.array, None, fx = 0.125, fy = 0.125, interpolation = cv2.INTER_CUBIC)
             #image_with_box = resized.array
 
             vu.visualize_boxes_and_labels_on_image_array(
-                image_with_box,
+                input_image,
                 np.squeeze(boxes),
                 np.squeeze(classes).astype(np.int32),
                 np.squeeze(scores),
