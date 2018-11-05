@@ -51,8 +51,9 @@ SCORE_TRESHOLD = 0.75
 # <=~=> Class that implements the Graphical User Interface
 class GUI():
 
-	# -> formula which will be displayed
+	# -> Formula which will be displayed
 	formula = ''
+        # -> Result which will be displayed
 	result = ''
 
 	# --- Main constructor
@@ -63,9 +64,12 @@ class GUI():
 		self.queue = queue
 		self.exit = 0
 
+		# Define the Tk window of size 640x600
 		self.root = Tk()
 		self.root.geometry("640x600")
 		self.root.resizable(width = False, height = False)
+
+		# Configure the frame panel and the canvas containing text.
 		self.panel = None
 		self.canvas = Canvas(self.root, height = 190)
 		self.canvas.pack(side = "bottom", fill = "both", expand = "yes")
@@ -95,12 +99,18 @@ class GUI():
 				  x1, y1 + radius,
 				  x1, y1 + radius,
 				  x1, y1]
+
+		# Add the background image
 		self.img = Image.open(os.path.abspath("./ProjectImages/image.jpg")).resize((640, 190), Image.ANTIALIAS)
 		self.image = ImageTk.PhotoImage(self.img)
 		self.canvas.create_image(0, 0, image = self.image, anchor = "nw")
+
+		# Configure the text position
 		self.canvas.create_polygon(self.points, fill = "#dddddd", smooth=True)
 		self.formula_container = self.canvas.create_text(320, 30, fill = "black", text = "Waiting for formula...")
 		self.result_container = self.canvas.create_text(320, 95, fill = "black", text = "This is the result", font = 25)
+
+		# Update the GUI
 		self.root.update_idletasks()
 		self.root.update()
 		print("GUI setup successfully!")
@@ -115,8 +125,11 @@ class GUI():
 	def setExit(self, exit):
 		self.exit = exit
 
+	# --- Basic setter
+	# Sets a new value of < result >
 	def setResult(self, result):
 		self.result = result
+
 	# --- Override the Thread run() method
 	# Thread will display frames which are read from the shared queue. Whenever the formula is changed, it will be displayed.
 	def run(self):
@@ -125,36 +138,46 @@ class GUI():
 
 		while self.exit == 0:
 
+			# Record each frame and process it
 			for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = True):
 
+				# Wait for lock in order to add this frame to the shared queue
 				s.acquire()
 				while not self.queue.empty():
 					self.queue.get()
 				self.queue.put(frame)
 				s.release()
 
-
+				# Convert the frame into a GUI friendly image
 				newImage = cv2.cvtColor(frame.array, cv2.COLOR_BGR2RGB)
 				newImage = Image.fromarray(newImage)
 				newImage = ImageTk.PhotoImage(newImage)
+
+				# Reset the capture
 				rawCapture.truncate(0)
 
+				# If no frame was displayed before, add the panel and display the current frame
 				if self.panel is None:
 					self.panel = Label(self.root, image = newImage)
 					self.panel.pack(side = "bottom", fill = X)
+				# Else just configure the panel to display the current frame
 				else:
 					self.panel.configure(image = newImage)
 					self.panel.image = newImage
 
+				# If the formula was updated, display it
 				if(self.formula != ''):
 					print("I got a formula: " + self.formula)
 					self.canvas.itemconfigure(self.formula_container, text = self.formula)
 					self.formula = ''
+
+				# If the result was updated, display it
 				if(self.result != ''):
 					print("I got a result: " + self.result)
-					self.canvas.itemconfigure(self.formula_container, text = self.result)
+					self.canvas.itemconfigure(self.result_container, text = self.result)
 					self.result = ''
 
+				# Update the GUI
 				self.root.update_idletasks()
 				self.root.update()
 
@@ -169,6 +192,7 @@ class backgroundApp(threading.Thread):
 	# -> Formula found by character recognition.
 	formula = ''
 
+	# -> Exit flag
 	exit = 0
 
 	# --- Main constructor
@@ -184,17 +208,18 @@ class backgroundApp(threading.Thread):
 	# and send it to the GUI thread.
 	def run(self):
 		print("Starting background app...")
-		#while True:
 		while True:
 			frame = None
+			# Wait for lock in order to retrieve the current frame.
 			while frame == None:
 				s.acquire()
 				frame = self.queue.get()
 				s.release()
 			print('frame generated!')
+			# Convert the frame into a numpy array for further processing.
 			input_image = frame.array
 			expanded_input_image = np.expand_dims(input_image, axis = 0)
-#            rawCapture.truncate(0)
+
 			print('starting model')
 
 			(boxes, scores, classes, num) = sess.run(
@@ -260,10 +285,6 @@ class backgroundApp(threading.Thread):
 				 use_normalized_coordinates=True,
 				 line_thickness=8,
 				 min_score_thresh=SCORE_TRESHOLD)
-			#s.acquire()
-			#self.queue.put(image_with_box)
-			#s.release()
-			#s.release()
 
 
 # <== MAIN CODE HERE ==>
@@ -317,6 +338,7 @@ frameQueue = queue.Queue(0)
 # --- Semaphore for allowing certain threads to access shared memory at a time.
 s = threading.Semaphore(3)
 
+# --- Setup the Pi Camera
 camera = PiCamera()
 camera.resolution = (640, 368)
 camera.framerate = 24
