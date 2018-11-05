@@ -27,7 +27,7 @@ def send_instruction(num1, sign, num2):
 		GPIO.setup(pin, GPIO.IN)
 
 	#check for overflow before sending
-	if num1 > 1023 or num2 > 1023 or num1 < -1024 or num2 < -1024:
+	if num1 > 2**55-1 or num2 > 2**55-1 or num1 < -2*55 or num2 < -2**55:
 		# Send Error
 		GPIO.output(2, GPIO.HIGH)
 		GPIO.output(3, GPIO.HIGH)
@@ -115,7 +115,7 @@ def send_instruction(num1, sign, num2):
 			break
 
 		#send num1 in 8 parts of 7 bits
-		for section in range(0, 9):
+		for section in range(0, 8):
 			for pin in range (6, 13):
 				place = pin + section*7
 				if two_complement_56bit_num1[place-6] == '1':
@@ -212,7 +212,7 @@ def send_instruction(num1, sign, num2):
 
 		#wait for the right solution header and get the solution in 5 parts of 12 bits
 		solution = [0]*60
-		for section in range(0, 6):
+		for section in range(0, 5):
 			#check for the right header
 			while not acknowledged:
 				if section %2 == 0 and GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
@@ -341,7 +341,7 @@ def check_formula_correct(formula):
 			if formula[index+1] in NON_DOUBLES:
 				return False
 			#check if the next character after a minus after a symbol is not a symbol too
-			else if formula[index+1] == '-' and formula[index+2] in SYMBOLS:
+			elif formula[index+1] == '-' and formula[index+2] in SYMBOLS:
 				return False
 			#check for a open or closing bracket and count them
 			elif character == '(':
