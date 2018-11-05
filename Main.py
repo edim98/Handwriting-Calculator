@@ -71,7 +71,7 @@ class GUI():
 
 		# Configure the frame panel and the canvas containing text.
 		self.panel = None
-		self.canvas = Canvas(self.root, height = 190)
+		self.canvas = Canvas(self.root, height = 280)
 		self.canvas.pack(side = "bottom", fill = "both", expand = "yes")
 
 		x1 = 120
@@ -101,7 +101,7 @@ class GUI():
 				  x1, y1]
 
 		# Add the background image
-		self.img = Image.open(os.path.abspath("./ProjectImages/image.jpg")).resize((640, 190), Image.ANTIALIAS)
+		self.img = Image.open(os.path.abspath("./ProjectImages/image.jpg")).resize((640, 280), Image.ANTIALIAS)
 		self.image = ImageTk.PhotoImage(self.img)
 		self.canvas.create_image(0, 0, image = self.image, anchor = "nw")
 
@@ -109,6 +109,9 @@ class GUI():
 		self.canvas.create_polygon(self.points, fill = "#dddddd", smooth=True)
 		self.formula_container = self.canvas.create_text(320, 30, fill = "black", text = "Waiting for formula...")
 		self.result_container = self.canvas.create_text(320, 95, fill = "black", text = "This is the result", font = 25)
+		self.img2 = Image.open(os.path.abspath("./ProjectImages/image.jpg")).resize((300, 110), Image.ANTIALIAS)
+		self.image2 = ImageTk.PhotoImage(self.img2)
+		self.image_container = self.canvas.create_image(170, 140, image=self.image2, anchor="nw")
 
 		# Update the GUI
 		self.root.update_idletasks()
