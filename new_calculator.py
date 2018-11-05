@@ -55,7 +55,6 @@ def send_instruction(num1, sign, num2):
 
 	#communicate with the fpga to get the calculations
 	while not finished:
-		error = False
 
 		# Send begin calculation
 		GPIO.output(2, GPIO.LOW)
