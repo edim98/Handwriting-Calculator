@@ -120,14 +120,18 @@ class GUI():
 
         while self.exit == 0:
 
-            if True:
+            for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = True):
+
                 s.acquire()
-                frame = self.queue.get()
+                while not self.queue.empty():
+                    self.queue.get()
+                self.queue.put(frame)
                 s.release()
 
-                newImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                newImage = cv2.cvtColor(frame.array, cv2.COLOR_BGR2RGB)
                 newImage = Image.fromarray(newImage)
                 newImage = ImageTk.PhotoImage(newImage)
+                rawCapture.truncate(0)
                 if self.panel is None:
                     self.panel = Label(self.root, image = newImage)
                     self.panel.pack(side = "bottom", fill = X)
@@ -174,11 +178,16 @@ class backgroundApp(threading.Thread):
     def run(self):
         print("Starting background app...")
        # while True:
-        for frame in camera.capture_continuous(rawCapture, format = 'bgr', use_video_port = True):
+        while True:
+            frame = None
+            while frame == None:
+                s.acquire()
+                frame = self.queue.get()
+                s.release()
             print('frame generated!')
             input_image = frame.array
             expanded_input_image = np.expand_dims(input_image, axis = 0)
-            rawCapture.truncate(0)
+#            rawCapture.truncate(0)
             print('starting model')
 
             (boxes, scores, classes, num) = sess.run(
@@ -219,9 +228,9 @@ class backgroundApp(threading.Thread):
                     formula += '*'
                 elif item == 14:
                     formula += '/'
-            if formula != "":
+            if formula is not "":
                  formula = Calc.check_formula(formula)
-            if formula != "Error" and formula != "":
+            if formula is not "Error" and formula is not "":
                  threadGUI.setFormula(formula)
                  result = Calc.formula_to_array(formula)
                  threadGUI.setFormula(result)
@@ -239,9 +248,9 @@ class backgroundApp(threading.Thread):
                  line_thickness=8,
                  min_score_thresh=SCORE_TRESHOLD)
 
-            s.acquire()
-            self.queue.put(image_with_box)
-            s.release()
+            #s.acquire()
+            #self.queue.put(image_with_box)
+            #s.release()
            # s.release()
 
 
@@ -292,7 +301,7 @@ detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
 num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
 # --- Frame queue that both threads work will access. The GUI thread will read from it while the BackgroundApp thread will write to it.
-workQueue = queue.Queue(0)
+frameQueue = queue.Queue(0)
 
 # --- Semaphore for allowing certain threads to access shared memory at a time.
 s = threading.Semaphore(3)
@@ -306,10 +315,10 @@ print("Camera started succesfully!")
 
 
 # --- Setup the GUI.
-threadGUI = GUI(workQueue)
+threadGUI = GUI(frameQueue)
 
 # --- Setup and start the BackgroundApp thread.
-threadBackgroundApp = backgroundApp(2, workQueue)
+threadBackgroundApp = backgroundApp(2, frameQueue)
 threadBackgroundApp.start()
 
 # -- Start the main Thread
