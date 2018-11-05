@@ -333,7 +333,7 @@ def check_formula_correct(formula):
 			if index == 0 and character in NON_DOUBLES:
 				return False
 			#check if the character at the last index is not a symbol
-			elif index = len(formula)-1 and character in SYMBOLS:
+			elif index == len(formula)-1 and character in SYMBOLS:
 				return False
 
 		if character in SYMBOLS:
