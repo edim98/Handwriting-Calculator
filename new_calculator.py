@@ -78,25 +78,21 @@ def send_instruction(num1, sign, num2):
 		#send operation type:
 		# GPIO.output(11, GPIO.HIGH)
 		if sign == '+' :
-			print('+')
 			GPIO.output(2, GPIO.LOW)
 			GPIO.output(3, GPIO.HIGH)
 			GPIO.output(4, GPIO.HIGH)
 			GPIO.output(5, GPIO.LOW)
 		elif sign == '-':
-			print('-')
 			GPIO.output(2, GPIO.LOW)
 			GPIO.output(3, GPIO.HIGH)
 			GPIO.output(4, GPIO.HIGH)
 			GPIO.output(5, GPIO.LOW)
 		elif sign == '*':
-			print('*')
 			GPIO.output(2, GPIO.HIGH)
 			GPIO.output(3, GPIO.LOW)
 			GPIO.output(4, GPIO.LOW)
 			GPIO.output(5, GPIO.LOW)
 		elif sign == '/':
-			print('/')
 			GPIO.output(2, GPIO.HIGH)
 			GPIO.output(3, GPIO.LOW)
 			GPIO.output(4, GPIO.LOW)
@@ -237,7 +233,6 @@ def send_instruction(num1, sign, num2):
 		for binary in solution:
 			solution_str += str(binary)
 		print(solution_str)
-		print(isinstance(solution_str, str))
 		solution_int = int(solution_str, 2)
 		if solution_str[0] == '1':
 			solution_int = solution_int - 2**60
