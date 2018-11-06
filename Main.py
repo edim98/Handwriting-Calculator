@@ -65,12 +65,13 @@ class GUI():
 
         # Define the Tk window of size 640x600
         self.root = Tk()
-        self.root.geometry("640x600")
+        self.root.geometry("640x760")
         self.root.resizable(width=False, height=False)
 
         # Configure the frame panel and the canvas containing text.
+
         self.panel = None
-        self.canvas = Canvas(self.root, height=280)
+        self.canvas = Canvas(self.root, height=190)
         self.canvas.pack(side="bottom", fill="both", expand="yes")
 
         x1 = 120
@@ -100,18 +101,19 @@ class GUI():
                        x1, y1]
 
         # Add the background image
-        self.img = Image.open(os.path.abspath("./ProjectImages/image.jpg")).resize((640, 280), Image.ANTIALIAS)
+        self.img = Image.open(os.path.abspath("./ProjectImages/image.jpg")).resize((640, 190), Image.ANTIALIAS)
         self.image = ImageTk.PhotoImage(self.img)
         self.canvas.create_image(0, 0, image=self.image, anchor="nw")
 
         # Configure the text position
         self.canvas.create_polygon(self.points, fill="#dddddd", smooth=True)
-        self.formula_container = self.canvas.create_text(320, 30, fill="white", text="Waiting for formula...", font = ("Times New Roman", 15))
+        self.formula_container = self.canvas.create_text(320, 30, fill="white", text="Waiting for formula...", font=("Times New Roman", 15))
         self.result_container = self.canvas.create_text(320, 95, fill="black", text="This is the result", font=("Times New Roman", 25))
-
-        self.img2 = Image.open(os.path.abspath("./ProjectImages/image.jpg")).resize((300, 110), Image.ANTIALIAS)
+        self.canvas2 = Canvas(self.root, height = 190)
+        self.canvas2.pack(side = "bottom", fill = "both", expand = "yes")
+        self.img2 = Image.open(os.path.abspath("./ProjectImages/image.jpg")).resize((640, 190), Image.ANTIALIAS)
         self.image2 = ImageTk.PhotoImage(self.img2)
-        self.image_container = self.canvas.create_image(170, 140, image=self.image2, anchor="nw")
+        self.image_container = self.canvas2.create_image(0, 0, image=self.image2, anchor="nw")
         self.image2_array = None
 
         # Update the GUI
@@ -146,18 +148,20 @@ class GUI():
         print("Starting GUI...")
 
         while self.exit == 0:
-
             # Record each frame and process it
             for frame in camera.capture_continuous(rawCapture, format='bgr', use_video_port=True):
-
+              #  while not s.acquire(blocking = False):
+                  # continue
+                   # print('waiting for lock in order to display frames...')
+               # print('lock granted to gui!')
                 # Wait for lock in order to add this frame to the shared queue
-                if s.acquire() == True:
-                    print('gui got lock!')
+                #if s.acquire(blocking = False) == True:
+                    #print('gui got lock!')
                     # while not self.queue.empty():
                     #     self.queue.get()
-                    self.queue.put(frame)
-                    s.release()
-                    print('gui released lock!')
+                self.queue.put(frame)
+                    #s.release()
+                    #print('gui released lock!')
 
                 # Convert the frame into a GUI friendly image
                 newImage = cv2.cvtColor(frame.array, cv2.COLOR_BGR2RGB)
@@ -198,6 +202,7 @@ class GUI():
                 # Update the GUI
                 self.root.update_idletasks()
                 self.root.update()
+               # s.release()
 
         print("GUI shutting down...")
 
@@ -237,11 +242,11 @@ class backgroundApp(threading.Thread):
 
             while self.queue.empty() == True:
                 time.sleep(0.1)
-            if s.acquire() == True:
-                print('background got lock!')
-                frame = self.queue.get()
-                s.release()
-                print('background release lock!')
+            #if s.acquire() == True:
+                #print('background got lock!')
+            frame = self.queue.get()
+                #s.release()
+                #print('background release lock!')
             # Convert the frame into a numpy array for further processing.
             input_image = frame.array
             expanded_input_image = np.expand_dims(input_image, axis=0)
@@ -291,23 +296,32 @@ class backgroundApp(threading.Thread):
                 elif item == 16:
                     formula += ')'
             if formula != "":
+                #while not s.acquire(blocking = False):
+                #    print('waiting for lock...')
+            #    print('got lock!')
                 if Calc.check_formula_correct(formula):
-                        if s.acquire():
-                            print('calculation should execute')
-                            threadGUI.setFormula(formula)
-                            try:
-                                result = Calc.formula_to_array(formula)
-                            except:
-                                Calc.reset_pins_to_low()
-                                result = "Exception: Calculation Error"
-                            threadGUI.setResult(str(result))
-                            s.release()
-                            print('calculation executed!')
+                    print('calculation should execute')
+                    #threadGUI.setFormula(formula)
+                    #print('Formula was set in the GUI')
+                    try:
+                        #while not s.acquire(blocking = True):
+                           # print('waiting for lock to start computing...')
+                       # print('lock granted!')
+                        #time.sleep(2)
+                        result = Calc.formula_to_array(formula)
+                        print('Result was computed!')
+                    except:
+                        Calc.reset_pins_to_low()
+                        result = "Exception: Calculation Error"
+                    threadGUI.setFormula(formula)
+                    threadGUI.setResult(str(result))
+                    print('calculation executed!')
+                   # s.release()
                 else:
                     threadGUI.setFormula("Incorrect Formula, waiting for new formula")
+                #s.release()
             else:
                 threadGUI.setFormula("Waiting for formula")
-
             image_with_box = input_image
             image_with_box.setflags(write=1)
 
@@ -376,7 +390,7 @@ num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 frameQueue = queue.LifoQueue(0)
 
 # --- Semaphore for allowing certain threads to access shared memory at a time.
-s = threading.BoundedSemaphore(2)
+s = threading.BoundedSemaphore(1)
 
 # --- Setup the Pi Camera
 camera = PiCamera()
