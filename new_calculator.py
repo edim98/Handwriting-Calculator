@@ -13,7 +13,7 @@ def reset_pins_to_low():
 
 def send_instruction(num1, sign, num2):
 	print("sending instructions")
-	print(str(num1), sign, str(num1))
+	print(str(num1), sign, str(num2))
 	acknowledged = False
 	finished = False
 	solution_int = 0
