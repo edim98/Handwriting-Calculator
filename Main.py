@@ -151,11 +151,11 @@ class GUI():
             for frame in camera.capture_continuous(rawCapture, format='bgr', use_video_port=True):
 
                 # Wait for lock in order to add this frame to the shared queue
-                s.acquire()
-                while not self.queue.empty():
-                    self.queue.get()
-                self.queue.put(frame)
-                s.release()
+                if s.acquire() == True:
+                    while not self.queue.empty():
+                        self.queue.get()
+                    self.queue.put(frame)
+                    s.release()
 
                 # Convert the frame into a GUI friendly image
                 newImage = cv2.cvtColor(frame.array, cv2.COLOR_BGR2RGB)
@@ -226,9 +226,9 @@ class backgroundApp(threading.Thread):
             frame = None
             # Wait for lock in order to retrieve the current frame.
             while frame == None:
-                s.acquire()
-                frame = self.queue.get()
-                s.release()
+                if s.acquire() == True:
+                    frame = self.queue.get()
+                    s.release()
             print('frame generated!')
             # Convert the frame into a numpy array for further processing.
             input_image = frame.array
@@ -281,15 +281,11 @@ class backgroundApp(threading.Thread):
             if formula != "":
                 if Calc.check_formula_correct(formula):
                     threadGUI.setFormula(formula)
-<<<<<<< HEAD
-                    result = Calc.formula_to_array(formula)
-=======
                     try:
                         result = Calc.formula_to_array(formula)
                     except:
                         Calc.reset_pins_to_low()
                         result = "Exception: Calculation Error"
->>>>>>> ba7f529e9d9480187429d69469b5d785802e8c93
                     threadGUI.setResult(str(result))
                 else:
                     threadGUI.setFormula("Incorrect Formula, waiting for new formula")
@@ -364,7 +360,7 @@ num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 frameQueue = queue.Queue(0)
 
 # --- Semaphore for allowing certain threads to access shared memory at a time.
-s = threading.Semaphore(3)
+s = threading.BoundedSemaphore(2)
 
 # --- Setup the Pi Camera
 camera = PiCamera()
