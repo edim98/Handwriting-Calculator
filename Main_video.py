@@ -332,7 +332,7 @@ FIG_DIR = os.path.join(CURRENT_DIR, FIG_MODEL_FOLDERNAME, FIG_FILENAME)
 LABELMAP_DIR = os.path.join(CURRENT_DIR, LABELMAP_FOLDERNAME, LABELMAP_FILENAME)
 
 # The path to the Video file
-VIDEO_DIR = os.path.join(CWD_PATH,VIDEO_NAME)
+VIDEO_DIR = os.path.join(CURRENT_DIR,VIDEO_NAME)
 
 # Load the labelmap to convert ID numbers the model uses into usable category names
 labelmap = lmu.load_labelmap(LABELMAP_DIR)
@@ -373,14 +373,6 @@ frameQueue = queue.Queue(0)
 
 # --- Semaphore for allowing certain threads to access shared memory at a time.
 s = threading.Semaphore(3)
-
-# --- Setup the Pi Camera
-camera = PiCamera()
-camera.resolution = (640, 368)
-camera.framerate = 24
-rawCapture = PiRGBArray(camera, size=(640, 368))
-time.sleep(0.1)
-print("Camera started succesfully!")
 
 # Open video file
 video = cv2.VideoCapture(VIDEO_DIR)
