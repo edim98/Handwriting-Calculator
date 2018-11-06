@@ -153,8 +153,8 @@ class GUI():
                 # Wait for lock in order to add this frame to the shared queue
                 if s.acquire() == True:
                     print('gui got lock!')
-                    while not self.queue.empty():
-                        self.queue.get()
+                    # while not self.queue.empty():
+                    #     self.queue.get()
                     self.queue.put(frame)
                     s.release()
                     print('gui released lock!')
@@ -225,15 +225,23 @@ class backgroundApp(threading.Thread):
     def run(self):
         print("Starting background app...")
         while True:
-            frame = None
-            # Wait for lock in order to retrieve the current frame.
-            while frame == None:
-                if s.acquire() == True:
-                    print('background got lock!')
-                    frame = self.queue.get()
-                    s.release()
-                    print('background released lock!')
-            print('frame generated!')
+            # frame = None
+            # # Wait for lock in order to retrieve the current frame.
+            # while frame == None:
+            #     if s.acquire() == True:
+            #         print('background got lock!')
+            #         frame = self.queue.get()
+            #         s.release()
+            #         print('background released lock!')
+            # print('frame generated!')
+
+            while self.queue.empty() == True:
+                time.sleep(0.1)
+            if s.acquire() == True:
+                print('background got lock!')
+                frame = self.queue.get()
+                s.release()
+                print('background release lock!')
             # Convert the frame into a numpy array for further processing.
             input_image = frame.array
             expanded_input_image = np.expand_dims(input_image, axis=0)
@@ -361,7 +369,7 @@ detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
 num_detections = detection_graph.get_tensor_by_name('num_detections:0')
 
 # --- Frame queue that both threads work will access. The GUI thread will read from it while the BackgroundApp thread will write to it.
-frameQueue = queue.Queue(0)
+frameQueue = queue.LifoQueue(0)
 
 # --- Semaphore for allowing certain threads to access shared memory at a time.
 s = threading.BoundedSemaphore(2)
@@ -376,6 +384,9 @@ print("Camera started succesfully!")
 
 # --- Setup the GUI.
 threadGUI = GUI(frameQueue)
+
+# --- Leave some time for the GUI to fill the shared queue with frames.
+time.sleep(1)
 
 # --- Setup and start the BackgroundApp thread.
 threadBackgroundApp = backgroundApp(2, frameQueue)
