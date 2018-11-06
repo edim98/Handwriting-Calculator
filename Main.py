@@ -106,8 +106,8 @@ class GUI():
 
         # Configure the text position
         self.canvas.create_polygon(self.points, fill="#dddddd", smooth=True)
-        self.formula_container = self.canvas.create_text(320, 30, fill="black", text="Waiting for formula...")
-        self.result_container = self.canvas.create_text(320, 95, fill="black", text="This is the result", font=25)
+        self.formula_container = self.canvas.create_text(320, 30, fill="white", text="Waiting for formula...", font = ("Times New Roman", 15))
+        self.result_container = self.canvas.create_text(320, 95, fill="black", text="This is the result", font=("Times New Roman", 25))
 
         self.img2 = Image.open(os.path.abspath("./ProjectImages/image.jpg")).resize((300, 110), Image.ANTIALIAS)
         self.image2 = ImageTk.PhotoImage(self.img2)
