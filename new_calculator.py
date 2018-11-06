@@ -17,9 +17,9 @@ def send_instruction(num1, sign, num2):
 	solution_int = 0
 
 	# Check if each input num is an int (and not an error), if not, return the error
-	if isinstance(num1, int):
+	if not isinstance(num1, int):
 		return num1
-	elif isinstance(num2, int):
+	elif not isinstance(num2, int):
 		return num2
 
 	# Set pins as in and output
