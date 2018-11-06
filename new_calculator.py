@@ -244,6 +244,7 @@ def send_instruction(num1, sign, num2):
 
 		finished = True
 
+	finished = False
 	return solution_int
 
 # Communicates a certain calculation to the fpga and waits for an answer.
