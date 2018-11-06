@@ -20,15 +20,19 @@ class Live:
         self.stopEvent = None
 
         self.root = Tk()
-        self.root.geometry("640x600")
+        self.root.geometry("640x800")
         self.root.resizable(width = False, height = False)
 
         self.panel = None
 
         # btn = tki.Button(self.root, text = "Capture operation", command = self.captureImage)
         # btn.pack(side="bottom", fill="both", expand="yes", padx=10, pady=5)
-
-        self.canvas = Canvas(self.root, height = 250)
+        self.canvas2 = Canvas(self.root, height=190)
+        self.canvas2.pack(side="bottom", fill="both", expand="yes")
+        self.img2 = Image.open(os.path.abspath("ProjectImages\image.jpg")).resize((640, 190), Image.ANTIALIAS)
+        self.image2 = ImageTk.PhotoImage(self.img2)
+        self.canvas2.create_image(0, 0, image=self.image2, anchor="nw")
+        self.canvas = Canvas(self.root, height = 190)
         self.canvas.pack(side = "bottom", fill = "both", expand = "yes")
         x1 = 120
         y1 = 50
@@ -55,14 +59,12 @@ class Live:
                   x1, y1 + radius,
                   x1, y1 + radius,
                   x1, y1]
-        self.img = Image.open(os.path.abspath("ProjectImages\image.jpg")).resize((640, 250), Image.ANTIALIAS)
+        self.img = Image.open(os.path.abspath("ProjectImages\image.jpg")).resize((640, 200), Image.ANTIALIAS)
         self.image = ImageTk.PhotoImage(self.img)
         self.canvas.create_image(0, 0, image = self.image, anchor = "nw")
         self.canvas.create_polygon(points, fill = "#dddddd", smooth=True)
         self.canvas.create_text(325, 30, fill = "white", text = "This is the result:", font = ("Times New Roman", 15))
-        self.img2 = Image.open(os.path.abspath("ProjectImages\image.jpg")).resize((300, 110), Image.ANTIALIAS)
-        self.image2 = ImageTk.PhotoImage(self.img2)
-        self.canvas.create_image(170, 140, image = self.image2, anchor = "nw")
+
 
         self.stopEvent = threading.Event()
         self.thread = threading.Thread(target=self.videoLoop, args=())
