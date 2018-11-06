@@ -108,6 +108,7 @@ def send_instruction(num1, sign, num2):
 				return "Received Error"
 			# print("waiting for ack operation type")
 		acknowledged = False
+		print("ack operation")
 
 		#send num1 in 8 parts of 7 bits
 		for section in range(0, 8):
@@ -146,6 +147,7 @@ def send_instruction(num1, sign, num2):
 					return "Debug"
 				# print("waiting for ack num1")
 			acknowledged = False
+		print("sent num1")
 
 		#send num2 in 8 parts of 7 bits
 		for section in range(0, 8):
@@ -184,6 +186,7 @@ def send_instruction(num1, sign, num2):
 					return "Debug"
 				# print("waiting for ack num2")
 			acknowledged = False
+		print("sent num2")
 
 		#wait for solution header
 		while(not acknowledged):
@@ -199,6 +202,7 @@ def send_instruction(num1, sign, num2):
 				return "Received Overflow"
 			# print("waiting for ack solution header")
 		acknowledged = False
+		print("sol header")
 
 		#wait for the right solution header and get the solution in 5 parts of 12 bits
 		solution = [0]*60
@@ -224,6 +228,7 @@ def send_instruction(num1, sign, num2):
 			for pin in range(16, 28):
 				place = pin + section*12
 				solution[place-16] = GPIO.input(pin)
+		print("solution gotten")
 
 		#reset all out pins to low
 		reset_pins_to_low()
