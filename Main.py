@@ -152,10 +152,12 @@ class GUI():
 
                 # Wait for lock in order to add this frame to the shared queue
                 if s.acquire() == True:
+                    print('gui got lock!')
                     while not self.queue.empty():
                         self.queue.get()
                     self.queue.put(frame)
                     s.release()
+                    print('gui released lock!')
 
                 # Convert the frame into a GUI friendly image
                 newImage = cv2.cvtColor(frame.array, cv2.COLOR_BGR2RGB)
@@ -227,8 +229,10 @@ class backgroundApp(threading.Thread):
             # Wait for lock in order to retrieve the current frame.
             while frame == None:
                 if s.acquire() == True:
+                    print('background got lock!')
                     frame = self.queue.get()
                     s.release()
+                    print('background released lock!')
             print('frame generated!')
             # Convert the frame into a numpy array for further processing.
             input_image = frame.array
