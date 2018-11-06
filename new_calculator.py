@@ -12,6 +12,7 @@ def reset_pins_to_low():
 		GPIO.output(pin, GPIO.LOW)
 
 def send_instruction(num1, sign, num2):
+    print("sending instructions")
 	acknowledged = False
 	finished = False
 	solution_int = 0
