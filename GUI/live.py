@@ -59,7 +59,7 @@ class Live:
         self.image = ImageTk.PhotoImage(self.img)
         self.canvas.create_image(0, 0, image = self.image, anchor = "nw")
         self.canvas.create_polygon(points, fill = "#dddddd", smooth=True)
-        self.canvas.create_text(325, 30, fill = "black", text = "This is the result:", font = ("Engravers MT", 10))
+        self.canvas.create_text(325, 30, fill = "white", text = "This is the result:", font = ("Times New Roman", 15))
         self.img2 = Image.open(os.path.abspath("ProjectImages\image.jpg")).resize((300, 110), Image.ANTIALIAS)
         self.image2 = ImageTk.PhotoImage(self.img2)
         self.canvas.create_image(170, 140, image = self.image2, anchor = "nw")

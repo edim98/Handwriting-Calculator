@@ -12,11 +12,17 @@ def reset_pins_to_low():
 		GPIO.output(pin, GPIO.LOW)
 
 def send_instruction(num1, sign, num2):
+	print("sending instructions")
+	print(str(num1), sign, str(num2))
 	acknowledged = False
 	finished = False
-	error = False
-	overflow = False
 	solution_int = 0
+
+	# Check if each input num is an int (and not an error), if not, return the error
+	if not isinstance(num1, int):
+		return num1
+	elif not isinstance(num2, int):
+		return num2
 
 	# Set pins as in and output
 	GPIO.setmode(GPIO.BCM)
@@ -51,7 +57,6 @@ def send_instruction(num1, sign, num2):
 
 	#communicate with the fpga to get the calculations
 	while not finished:
-		error = False
 
 		# Send begin calculation
 		GPIO.output(2, GPIO.LOW)
@@ -65,36 +70,29 @@ def send_instruction(num1, sign, num2):
 			if (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 0):
 				acknowledged = True
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-				error = True
+				reset_pins_to_low()
 				print("Received error")
-				break
+				return "Received Error"
 		acknowledged = False
-		if error or overflow:
-			reset_pins_to_low()
-			break
 
 		#send operation type:
 		# GPIO.output(11, GPIO.HIGH)
 		if sign == '+' :
-			print('+')
 			GPIO.output(2, GPIO.LOW)
 			GPIO.output(3, GPIO.HIGH)
 			GPIO.output(4, GPIO.HIGH)
 			GPIO.output(5, GPIO.LOW)
 		elif sign == '-':
-			print('-')
 			GPIO.output(2, GPIO.LOW)
 			GPIO.output(3, GPIO.HIGH)
 			GPIO.output(4, GPIO.HIGH)
 			GPIO.output(5, GPIO.LOW)
 		elif sign == '*':
-			print('*')
 			GPIO.output(2, GPIO.HIGH)
 			GPIO.output(3, GPIO.LOW)
 			GPIO.output(4, GPIO.LOW)
 			GPIO.output(5, GPIO.LOW)
 		elif sign == '/':
-			print('/')
 			GPIO.output(2, GPIO.HIGH)
 			GPIO.output(3, GPIO.LOW)
 			GPIO.output(4, GPIO.LOW)
@@ -105,14 +103,12 @@ def send_instruction(num1, sign, num2):
 			if (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
 				acknowledged = True
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-				error = True
+				reset_pins_to_low()
 				print("Received error")
-				break
+				return "Received Error"
 			# print("waiting for ack operation type")
 		acknowledged = False
-		if error or overflow:
-			reset_pins_to_low()
-			break
+		print("ack operation")
 
 		#send num1 in 8 parts of 7 bits
 		for section in range(0, 8):
@@ -142,16 +138,16 @@ def send_instruction(num1, sign, num2):
 				if section %2 == 1 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
 					acknowledged = True
 				elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-					error = True
+					reset_pins_to_low()
 					print("Received error")
-					break
+					return "Received Error"
 				elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
+					reset_pins_to_low()
 					print("debug")
+					return "Debug"
 				# print("waiting for ack num1")
 			acknowledged = False
-			if error or overflow:
-				reset_pins_to_low()
-				break
+		print("sent num1")
 
 		#send num2 in 8 parts of 7 bits
 		for section in range(0, 8):
@@ -181,34 +177,32 @@ def send_instruction(num1, sign, num2):
 				if section %2 == 1 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
 					acknowledged = True
 				elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-					error = True
+					reset_pins_to_low()
 					print("Received error")
-					break
+					return "Received Error"
 				elif (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
+					reset_pins_to_low()
 					print("debug")
+					return "Debug"
 				# print("waiting for ack num2")
 			acknowledged = False
-			if error or overflow:
-				reset_pins_to_low()
-				break
+		print("sent num2")
 
 		#wait for solution header
 		while(not acknowledged):
 			if (GPIO.input(13) == 0 and GPIO.input(14) == 0 and GPIO.input(15) == 1):
 				acknowledged = True
 			elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-				error = True
+				reset_pins_to_low()
 				print("Received Error")
-				break
+				return "Received Error"
 			elif (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-					overflow = True
-					print("Received Overflow")
-					break;
+				reset_pins_to_low()
+				print("Received Overflow")
+				return "Received Overflow"
 			# print("waiting for ack solution header")
 		acknowledged = False
-		if error or overflow:
-			reset_pins_to_low()
-			break
+		print("sol header")
 
 		#wait for the right solution header and get the solution in 5 parts of 12 bits
 		solution = [0]*60
@@ -220,23 +214,21 @@ def send_instruction(num1, sign, num2):
 				elif section %2 == 1 and GPIO.input(13) == 1 and GPIO.input(14) == 0 and GPIO.input(15) == 1:
 					acknowledged = True
 				elif (GPIO.input(13) == 1 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-					error = True
+					reset_pins_to_low()
 					print("Received Error")
-					break
+					return "Received Error"
 				elif (GPIO.input(13) == 0 and GPIO.input(14) == 1 and GPIO.input(15) == 1):
-						overflow = True
-						print("Received Overflow")
-						break;
+					reset_pins_to_low()
+					print("Received Overflow")
+					return "Received Overflow"
 			# print("waiting for ack solution header")
 			acknowledged = False
-			if error or overflow:
-				reset_pins_to_low()
-				break
 
 			#get the solution in 5 parts of 12 bits
 			for pin in range(16, 28):
 				place = pin + section*12
 				solution[place-16] = GPIO.input(pin)
+		print("solution gotten")
 
 		#reset all out pins to low
 		reset_pins_to_low()
@@ -246,7 +238,6 @@ def send_instruction(num1, sign, num2):
 		for binary in solution:
 			solution_str += str(binary)
 		print(solution_str)
-		print(isinstance(solution_str, str))
 		solution_int = int(solution_str, 2)
 		if solution_str[0] == '1':
 			solution_int = solution_int - 2**60
@@ -254,6 +245,7 @@ def send_instruction(num1, sign, num2):
 
 		finished = True
 
+	finished = False
 	return solution_int
 
 # Communicates a certain calculation to the fpga and waits for an answer.

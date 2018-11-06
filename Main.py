@@ -278,10 +278,18 @@ class backgroundApp(threading.Thread):
                     formula += '('
                 elif item == 16:
                     formula += ')'
-            if formula is not "":
+            if formula != "":
                 if Calc.check_formula_correct(formula):
                     threadGUI.setFormula(formula)
+<<<<<<< HEAD
                     result = Calc.formula_to_array(formula)
+=======
+                    try:
+                        result = Calc.formula_to_array(formula)
+                    except:
+                        Calc.reset_pins_to_low()
+                        result = "Exception: Calculation Error"
+>>>>>>> ba7f529e9d9480187429d69469b5d785802e8c93
                     threadGUI.setResult(str(result))
                 else:
                     threadGUI.setFormula("Incorrect Formula, waiting for new formula")
