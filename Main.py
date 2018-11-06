@@ -43,7 +43,6 @@ NUMBER_OF_CLASSES = 16
 # The certainty treshold for a classified object to show (0.0-1.0)
 SCORE_TRESHOLD = 0.75
 
-
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # --------------- Only change variables above this line! -----------------
 
@@ -54,6 +53,8 @@ class GUI():
     formula = ''
     # -> Result which will be displayed
     result = ''
+    # -> Used for checking for new result
+    new_result = False
 
     # --- Main constructor
     # -> threadID helps differentiate between threads
@@ -136,6 +137,7 @@ class GUI():
     # Sets a new value of < result >
     def setResult(self, result):
         self.result = result
+        self.new_result = True
 
     def setImageWithBoxes(self, newImage):
         # self.canvas.itemconfigure(self.image_container, image = newImage)
@@ -187,10 +189,11 @@ class GUI():
                     self.formula = ''
 
                 # If the result was updated, display it
-                if (self.result != ''):
+                if (new_result):
                     print("I got a result: " + self.result)
                     self.canvas.itemconfigure(self.result_container, text=self.result)
                     self.result = ''
+                    new_result = False
 
                 if self.image2_array is not None:
                     np_array = np.array(self.image2_array)
@@ -290,7 +293,7 @@ class backgroundApp(threading.Thread):
                 elif item == 13:
                     formula += '*'
                 elif item == 14:
-                    formula += '/'
+                    formula += ''
                 elif item == 15:
                     formula += '('
                 elif item == 16:
