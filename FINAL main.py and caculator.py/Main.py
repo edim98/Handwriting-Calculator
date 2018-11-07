@@ -277,7 +277,7 @@ class backgroundApp(threading.Thread):
                 elif item == 13:
                     formula += '*'
                 elif item == 14:
-                    formula += '/'
+                    formula += ''
                 elif item == 15:
                     formula += '('
                 elif item == 16:
