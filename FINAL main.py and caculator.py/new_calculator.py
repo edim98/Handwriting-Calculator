@@ -384,8 +384,10 @@ def check_formula_correct(formula):
             #check if the next character after a minus after a symbol is not a symbol too
             elif formula[index+1] == '-' and formula[index+2] in SYMBOLS:
                 return False
-            #check for a open or closing bracket and count them
-            elif character == '(':
+                
+        #check for a open or closing bracket and count them
+        if character in SIGNS_3:
+            if character == '(':
                 openbracket += 1
             elif character == ')':
                 closebracket += 1
