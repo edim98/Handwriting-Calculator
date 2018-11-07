@@ -393,6 +393,9 @@ def check_formula_correct(formula):
                 #exceeds the number of opening brackets
                 if closebracket > openbracket:
                     return False
+            #check if the amount of opening and closing brackets is the same on first and last index
+            elif index == len(formula)-1 and openbracket != closebracket:
+                return False
     #if formula is not deemed incorrect in the above loop, return True
     return True
 
