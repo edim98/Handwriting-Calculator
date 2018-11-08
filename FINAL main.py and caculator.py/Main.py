@@ -374,9 +374,9 @@ s = threading.BoundedSemaphore(1)
 camera = PiCamera()
 camera.resolution = (640, 368)
 camera.framerate = 24
-camera.brightness = 60
-camera.contrast = 60
-camera.sharpness = 50
+camera.brightness = 50
+camera.contrast = 50
+#camera.sharpness = 50
 rawCapture = PiRGBArray(camera, size=(640, 368))
 time.sleep(0.1)
 print("Camera started succesfully!")
